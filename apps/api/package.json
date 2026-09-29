@@ -8,7 +8,8 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "db:import": "tsx scripts/import-sheets.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",
@@ -18,7 +19,11 @@
   "devDependencies": {
     "@cloudflare/workers-types": "^5.20260929.1",
     "@types/node": "^24.19.0",
+    "@types/pg": "^8.23.1",
     "drizzle-kit": "^0.31.11",
+    "exceljs": "^4.4.0",
+    "pg": "^8.23.0",
+    "tsx": "^4.23.15",
     "typescript": "~6.0.2",
     "wrangler": "^4.110.0"
   }
