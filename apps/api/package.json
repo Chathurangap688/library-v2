@@ -12,9 +12,11 @@
     "db:import": "tsx scripts/import-sheets.ts"
   },
   "dependencies": {
+    "@hono/zod-validator": "^0.9.1",
     "@neondatabase/serverless": "^1.1.0",
     "drizzle-orm": "^0.45.3",
-    "hono": "^4.13.11"
+    "hono": "^4.13.11",
+    "zod": "^4.6.5"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^5.20260929.1",
