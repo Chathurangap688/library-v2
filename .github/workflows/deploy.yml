@@ -1,0 +1,51 @@
+# Lesson 0.2: every push to main builds the React app → GitHub Pages,
+# and deploys the Worker → Cloudflare. Two jobs that run side by side.
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:        # "Run workflow" button in the Actions tab
+
+permissions:
+  contents: read
+  pages: write              # needed to publish to GitHub Pages
+  id-token: write           # needed by deploy-pages
+
+concurrency:
+  group: deploy
+  cancel-in-progress: true
+
+jobs:
+  web:
+    name: Web → GitHub Pages
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.pages.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - run: npm run build -w apps/web
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with: { path: apps/web/dist }
+      - id: pages
+        uses: actions/deploy-pages@v4
+
+  api:
+    name: API → Cloudflare Worker
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - uses: cloudflare/wrangler-action@v3
+        with:
+          workingDirectory: apps/api
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy --minify
