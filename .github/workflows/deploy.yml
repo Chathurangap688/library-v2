@@ -43,6 +43,7 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: 22, cache: npm }
       - run: npm ci
+      - run: npm run typecheck -w apps/api     # stop here if the TypeScript has errors
       - uses: cloudflare/wrangler-action@v3
         with:
           workingDirectory: apps/api
