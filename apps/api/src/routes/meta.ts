@@ -13,7 +13,7 @@ import { Category, Language } from '../lib/schemas'
 export const metaRoutes = new OpenAPIHono<AppEnv>({ defaultHook: validationHook })
 
 metaRoutes.openapi(createRoute({
-  method: 'get', path: '/categories', tags: ['Meta'], operationId: 'listCategories',
+  method: 'get', path: '/categories', security: [{ sessionCookie: [] }], tags: ['Meta'], operationId: 'listCategories',
   summary: 'All categories with how many books each has',
   responses: { 200: { description: 'Categories A–Z', content: { 'application/json': { schema: z.array(Category) } } } },
 }), async (c) => {
@@ -25,7 +25,7 @@ metaRoutes.openapi(createRoute({
 })
 
 metaRoutes.openapi(createRoute({
-  method: 'get', path: '/languages', tags: ['Meta'], operationId: 'listLanguages',
+  method: 'get', path: '/languages', security: [{ sessionCookie: [] }], tags: ['Meta'], operationId: 'listLanguages',
   summary: 'Book languages with counts',
   responses: { 200: { description: 'Languages A–Z', content: { 'application/json': { schema: z.array(Language) } } } },
 }), async (c) => {

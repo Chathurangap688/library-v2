@@ -6,11 +6,13 @@
  *   /api/*             → our API
  *   /api/openapi.json  → the API contract (generated from the Zod schemas)
  *   /api/docs          → interactive docs (Swagger UI)
+ *   /auth/*            → Lesson 3.2: sign in / out with Asgardeo (BFF)
  *   /*                 → the React app from GitHub Pages
  */
 import { OpenAPIHono, createRoute } from '@hono/zod-openapi'
 import { swaggerUI } from '@hono/swagger-ui'
 import { secureHeaders } from 'hono/secure-headers'
+import { csrf } from 'hono/csrf'
 import { HTTPException } from 'hono/http-exception'
 import { sql } from 'drizzle-orm'
 import type { AppEnv, Bindings } from './types'
@@ -20,6 +22,10 @@ import { validationHook } from './lib/validate'
 import { DbHealth, Health } from './lib/schemas'
 import { bookRoutes } from './routes/books'
 import { metaRoutes } from './routes/meta'
+import { authRoutes } from './routes/auth'
+import { meRoutes } from './routes/me'
+import { loadUser, requireActive } from './auth/guards'
+import { cookieName } from './auth/session'
 
 // The "info" part of the OpenAPI document (also used by scripts/openapi.ts)
 export const openApiInfo = {
@@ -38,11 +44,23 @@ export function buildApp(makeDb: (env: Bindings) => Db) {
 
   app.use('*', secureHeaders())
 
-  // Give every API request its own database handle: c.get('db')
-  app.use('/api/*', async (c, next) => {
-    c.set('db', makeDb(c.env))
-    await next()
-  })
+  // Lesson 3.2: a POST/PUT/DELETE from a page on another site is refused (CSRF protection)
+  app.use('*', csrf({ origin: (origin, c) => origin === c.env.APP_ORIGIN }))
+
+  // Give every API/auth request its own database handle (c.get('db')) and the signed-in user (c.get('user'))
+  for (const path of ['/api/*', '/auth/*']) {
+    app.use(path, async (c, next) => {
+      c.set('db', makeDb(c.env))
+      await next()
+    })
+    app.use(path, loadUser)
+  }
+
+  // Lesson 3.2: the library is private — books and lists need an ACTIVE account
+  app.use('/api/books/*', requireActive)
+  app.use('/api/books', requireActive)
+  app.use('/api/categories', requireActive)
+  app.use('/api/languages', requireActive)
 
   // ---- API ----
   app.openapi(createRoute({
@@ -62,6 +80,14 @@ export function buildApp(makeDb: (env: Bindings) => Db) {
 
   app.route('/api/books', bookRoutes)
   app.route('/api', metaRoutes)
+  app.route('/api', meRoutes)
+  app.route('/auth', authRoutes)
+
+  // Lesson 3.2: tell OpenAPI (and Swagger, APIM) how clients authenticate: our session cookie
+  app.openAPIRegistry.registerComponent('securitySchemes', 'sessionCookie', {
+    type: 'apiKey', in: 'cookie', name: cookieName({ APP_ORIGIN: 'https://' } as Bindings),
+    description: 'Set by /auth/login → Asgardeo → /auth/callback',
+  })
 
   // The contract + a docs page to try every endpoint in the browser
   app.doc31('/api/openapi.json', openApiInfo)

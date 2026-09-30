@@ -1,18 +1,31 @@
 {
-  "$schema": "node_modules/wrangler/config-schema.json",
-  // Lesson 0.2: the Worker name becomes the first part of the address:
-  // https://library.bmcpthilakawansha.workers.dev
-  "name": "library",
-  "main": "src/index.ts",
-  "compatibility_date": "2026-09-29",
-  "workers_dev": true,
-  "vars": {
-    // Where the built React app lives. Not a secret, so it can sit here.
-    "PAGES_ORIGIN": "https://chathurangap688.github.io/library-v2"
-  },
-  // Logs you can read in the Cloudflare dashboard (Workers → library → Logs)
-  "observability": {
-    "enabled": true,
-    "head_sampling_rate": 1
-  }
+	"$schema": "node_modules/wrangler/config-schema.json",
+	// Lesson 0.2: the Worker name becomes the first part of the address:
+	// https://library.bmcpthilakawansha.workers.dev
+	"name": "library",
+	"main": "src/index.ts",
+	"compatibility_date": "2026-09-29",
+	"workers_dev": true,
+	"vars": {
+		// Where the built React app lives. Not a secret, so it can sit here.
+		"PAGES_ORIGIN": "https://chathurangap688.github.io/library-v2",
+		// Lesson 3.2: login with Asgardeo. None of these are secrets
+		// (ASGARDEO_CLIENT_SECRET and DATABASE_URL are set with `wrangler secret put`).
+		"APP_ORIGIN": "https://library.bmcpthilakawansha.workers.dev",
+		"ASGARDEO_ORG": "mylibrary",
+		"ASGARDEO_CLIENT_ID": "fNvOS_YL4Ujk1JHydXM1HEEaAmAa"
+	},
+	// Lesson 3.2: login sessions live in Workers KV (key = SHA-256 of the cookie value)
+	"kv_namespaces": [
+		{
+			"binding": "SESSIONS",
+			"id": "1cd0989c07e4435d8a48082c88bd444d",
+			"remote": true
+		}
+	],
+	// Logs you can read in the Cloudflare dashboard (Workers → library → Logs)
+	"observability": {
+		"enabled": true,
+		"head_sampling_rate": 1
+	}
 }

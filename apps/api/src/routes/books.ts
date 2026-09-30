@@ -18,12 +18,14 @@ import { BookDetail, BookIdParam, BookPage, ListBooksQuery, problemResponse } fr
 export const bookRoutes = new OpenAPIHono<AppEnv>({ defaultHook: validationHook })
 
 const listBooks = createRoute({
-  method: 'get', path: '/', tags: ['Books'], operationId: 'listBooks',
+  method: 'get', path: '/', security: [{ sessionCookie: [] }], tags: ['Books'], operationId: 'listBooks',
   summary: 'List books (search, filter, sort, page)',
   request: { query: ListBooksQuery },
   responses: {
     200: { description: 'One page of books', content: { 'application/json': { schema: BookPage } } },
     400: problemResponse('The query string is not valid'),
+    401: problemResponse('Not signed in'),
+    403: problemResponse('Account not active yet'),
   },
 })
 
@@ -64,12 +66,14 @@ bookRoutes.openapi(listBooks, async (c) => {
 })
 
 const getBook = createRoute({
-  method: 'get', path: '/{id}', tags: ['Books'], operationId: 'getBook',
+  method: 'get', path: '/{id}', security: [{ sessionCookie: [] }], tags: ['Books'], operationId: 'getBook',
   summary: 'One book with its public ratings',
   request: { params: BookIdParam },
   responses: {
     200: { description: 'The book', content: { 'application/json': { schema: BookDetail } } },
     400: problemResponse('The id is not a valid UUID'),
+    401: problemResponse('Not signed in'),
+    403: problemResponse('Account not active yet'),
     404: problemResponse('No book with this id'),
   },
 })

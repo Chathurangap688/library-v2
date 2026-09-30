@@ -16,6 +16,14 @@
     }
   ],
   "components": {
+    "securitySchemes": {
+      "sessionCookie": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "__Host-session",
+        "description": "Set by /auth/login → Asgardeo → /auth/callback"
+      }
+    },
     "schemas": {
       "Health": {
         "type": "object",
@@ -409,6 +417,52 @@
           "language",
           "bookCount"
         ]
+      },
+      "Me": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "email": {
+            "type": "string"
+          },
+          "name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "picture": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "user",
+              "admin"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "active"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "name",
+          "picture",
+          "role",
+          "status"
+        ]
       }
     },
     "parameters": {}
@@ -458,6 +512,11 @@
     },
     "/api/books": {
       "get": {
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
         "tags": [
           "Books"
         ],
@@ -590,12 +649,37 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Not signed in",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Account not active yet",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
           }
         }
       }
     },
     "/api/books/{id}": {
       "get": {
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
         "tags": [
           "Books"
         ],
@@ -634,6 +718,26 @@
               }
             }
           },
+          "401": {
+            "description": "Not signed in",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Account not active yet",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
           "404": {
             "description": "No book with this id",
             "content": {
@@ -649,6 +753,11 @@
     },
     "/api/categories": {
       "get": {
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
         "tags": [
           "Meta"
         ],
@@ -673,6 +782,11 @@
     },
     "/api/languages": {
       "get": {
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
         "tags": [
           "Meta"
         ],
@@ -688,6 +802,37 @@
                   "items": {
                     "$ref": "#/components/schemas/Language"
                   }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/me": {
+      "get": {
+        "tags": [
+          "Account"
+        ],
+        "operationId": "getMe",
+        "summary": "The signed-in user (also for pending accounts)",
+        "responses": {
+          "200": {
+            "description": "Signed in",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Me"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
                 }
               }
             }

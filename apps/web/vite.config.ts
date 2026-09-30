@@ -10,6 +10,7 @@ export default defineConfig({
   server: {
     // Local development: `npm run dev:web` (5173) forwards /api to `npm run dev:api` (8787),
     // so the React code can always call '/api/…' — same as in production.
-    proxy: { '/api': 'http://localhost:8787' },
+    // Lesson 3.2: /auth too, so login cookies are set for localhost:5173 (APP_ORIGIN in .dev.vars)
+    proxy: { '/api': 'http://localhost:8787', '/auth': 'http://localhost:8787' },
   },
 })

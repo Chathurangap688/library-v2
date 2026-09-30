@@ -97,3 +97,13 @@ export const BookIdParam = z.object({
 // ---- meta ----
 export const Category = z.object({ id: z.number().int(), name: z.string(), bookCount: z.number().int() }).openapi('Category')
 export const Language = z.object({ language: z.string().nullable(), bookCount: z.number().int() }).openapi('Language')
+
+// ---- account (Lesson 3.2) ----
+export const Me = z.object({
+  id: z.uuid(),
+  email: z.string(),
+  name: z.string().nullable(),
+  picture: z.string().nullable(),
+  role: z.enum(['user', 'admin']),
+  status: z.enum(['pending', 'active']),
+}).openapi('Me')

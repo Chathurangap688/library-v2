@@ -45,3 +45,16 @@ export function useLanguages() {
     staleTime: 10 * 60_000,
   })
 }
+
+/** Lesson 3.2: who is signed in? null = nobody (the API answered 401) */
+export function useMe() {
+  return useQuery({
+    queryKey: ['me'],
+    queryFn: async () => {
+      const res = await api.GET('/api/me')
+      if (res.response.status === 401) return null
+      return unwrap(res)
+    },
+    staleTime: 60_000,
+  })
+}
