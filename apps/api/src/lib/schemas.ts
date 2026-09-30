@@ -58,6 +58,10 @@ export const Book = z.object({
   available: z.number().int().openapi({ description: 'copies minus open loans' }),
   avgRating: z.number().nullable().openapi({ example: 4.5 }),
   ratingCount: z.number().int(),
+  // Lesson 4.1: the signed-in user's own status and rating
+  myStatus: z.enum(['to_read', 'reading', 'read']).nullable(),
+  myRating: z.number().int().min(1).max(5).nullable(),
+  myReview: z.string().nullable(),
   // Lesson 3.3: only in answers to ADMINS (the server leaves them out for everyone else)
   purchasedFrom: z.string().nullable().optional().openapi({ description: 'admins only' }),
   purchaseDate: z.string().nullable().optional().openapi({ description: 'admins only', format: 'date' }),
@@ -91,6 +95,10 @@ export const ListBooksQuery = z.object({
     .openapi({ description: 'Repeat for several: ?category=Novel&category=War (a book needs at least one)' }),
   translations: yesNo.openapi({ description: 'true = only translated books' }),
   available: yesNo.openapi({ description: 'true = only books with a free copy' }),
+  // Lesson 4.1: "my shelves"
+  shelf: z.enum(['to_read', 'reading', 'read', 'rated']).optional()
+    .openapi({ description: 'Only books on MY shelf (or that I rated)' }),
+  hideRead: yesNo.openapi({ description: 'true = leave out books I have read' }),
   sort: z.enum(['title', 'newest', 'rating']).default('title'),
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(100).default(24),
@@ -132,3 +140,24 @@ export const UpdateUser = z.object({
   role: z.enum(['user', 'admin']).optional(),
 }).refine((v) => v.status !== undefined || v.role !== undefined, { message: 'Send status and/or role' })
   .openapi('UpdateUser')
+
+// ---- my reading (Lesson 4.1) ----
+export const ReadingState = z.enum(['to_read', 'reading', 'read']).openapi('ReadingState')
+export const SetStatus = z.object({
+  status: ReadingState.nullable().openapi({ description: 'null = take the book off my shelves' }),
+}).openapi('SetStatus')
+export const SetRating = z.object({
+  rating: z.number().int().min(1).max(5),
+  review: z.string().trim().max(2000).nullable().optional(),
+}).openapi('SetRating')
+export const MyBookState = z.object({
+  bookId: z.uuid(),
+  myStatus: ReadingState.nullable(),
+  myRating: z.number().int().nullable(),
+  myReview: z.string().nullable(),
+  avgRating: z.number().nullable(),
+  ratingCount: z.number().int(),
+}).openapi('MyBookState')
+export const ShelfCounts = z.object({
+  to_read: z.number().int(), reading: z.number().int(), read: z.number().int(), rated: z.number().int(),
+}).openapi('ShelfCounts')

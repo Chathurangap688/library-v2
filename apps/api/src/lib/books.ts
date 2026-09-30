@@ -62,6 +62,15 @@ export const adminBookColumns = {
   addedByName: sql<string | null>`(select coalesce(u.name, u.email) from users u where u.id = books.added_by)`,
 }
 
-/** Which columns this user may see */
-export const bookColumnsFor = (isAdmin: boolean) =>
-  isAdmin ? { ...publicBookColumns, ...bookExtras, ...adminBookColumns } : { ...publicBookColumns, ...bookExtras }
+// Lesson 4.1: MY status and MY rating for each book (null when I have none)
+export const myBookColumns = (userId: string) => ({
+  myStatus: sql<'to_read' | 'reading' | 'read' | null>`(select rs.status from reading_status rs
+      where rs.book_id = books.id and rs.user_id = ${userId})`,
+  myRating: sql<number | null>`(select r.rating from ratings r where r.book_id = books.id and r.user_id = ${userId})::int`,
+  myReview: sql<string | null>`(select r.review from ratings r where r.book_id = books.id and r.user_id = ${userId})`,
+})
+
+/** Which columns this user may see (+ their own status and rating) */
+export const bookColumnsFor = (isAdmin: boolean, userId: string) => ({
+  ...publicBookColumns, ...bookExtras, ...myBookColumns(userId), ...(isAdmin ? adminBookColumns : {}),
+})

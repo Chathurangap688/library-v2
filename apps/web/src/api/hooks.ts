@@ -90,3 +90,51 @@ export function useDeleteUser() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'users'] }),
   })
 }
+
+// ---- Lesson 4.1: my reading ----
+export type ReadingState = 'to_read' | 'reading' | 'read'
+type MyBookState = { bookId: string; myStatus: ReadingState | null; myRating: number | null; myReview: string | null; avgRating: number | null; ratingCount: number }
+
+export function useShelves() {
+  return useQuery({ queryKey: ['shelves'], queryFn: async () => unwrap(await api.GET('/api/me/shelves')) })
+}
+
+/**
+ * After a change we (1) patch the cached book page right away with the server's answer,
+ * and (2) mark lists and shelf counts as stale so they reload in the background.
+ */
+function useAfterReadingChange() {
+  const qc = useQueryClient()
+  return (state: MyBookState) => {
+    qc.setQueryData(['book', state.bookId], (old: object | undefined) => (old ? { ...old, ...state } : old))
+    qc.invalidateQueries({ queryKey: ['book', state.bookId] })
+    qc.invalidateQueries({ queryKey: ['books'] })
+    qc.invalidateQueries({ queryKey: ['shelves'] })
+  }
+}
+
+export function useSetStatus() {
+  const after = useAfterReadingChange()
+  return useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: ReadingState | null }) =>
+      unwrap(await api.PUT('/api/books/{id}/status', { params: { path: { id } }, body: { status } })),
+    onSuccess: after,
+  })
+}
+
+export function useSetRating() {
+  const after = useAfterReadingChange()
+  return useMutation({
+    mutationFn: async ({ id, rating, review }: { id: string; rating: number; review: string | null }) =>
+      unwrap(await api.PUT('/api/books/{id}/rating', { params: { path: { id } }, body: { rating, review } })),
+    onSuccess: after,
+  })
+}
+
+export function useDeleteRating() {
+  const after = useAfterReadingChange()
+  return useMutation({
+    mutationFn: async (id: string) => unwrap(await api.DELETE('/api/books/{id}/rating', { params: { path: { id } } })),
+    onSuccess: after,
+  })
+}

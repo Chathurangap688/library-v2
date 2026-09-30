@@ -32,7 +32,8 @@ const listBooks = createRoute({
 bookRoutes.openapi(listBooks, async (c) => {
   const f = c.req.valid('query')
   const db = c.get('db')
-  const columns = bookColumnsFor(c.get('user')?.role === 'admin')   // Lesson 3.3: admins see private fields
+  const me = c.get('user')!                                        // requireActive guarantees a user
+  const columns = bookColumnsFor(me.role === 'admin', me.id)       // admins see private fields (3.3), everyone their own status (4.1)
   const categoryNames = f.category === undefined ? [] : Array.isArray(f.category) ? f.category : [f.category]
 
   // Build the WHERE part from the filters that were given
@@ -50,6 +51,10 @@ bookRoutes.openapi(listBooks, async (c) => {
     where.push(sql`exists (select 1 from book_categories bc join categories c on c.id = bc.category_id
       where bc.book_id = books.id and c.name in (${sql.join(categoryNames.map((n) => sql`${n}`), sql`, `)}))`)
   }
+  // Lesson 4.1: my shelves
+  if (f.shelf === 'rated') where.push(sql`exists (select 1 from ratings r where r.book_id = books.id and r.user_id = ${me.id})`)
+  else if (f.shelf) where.push(sql`exists (select 1 from reading_status rs where rs.book_id = books.id and rs.user_id = ${me.id} and rs.status = ${f.shelf})`)
+  if (f.hideRead === 'true') where.push(sql`not exists (select 1 from reading_status rs where rs.book_id = books.id and rs.user_id = ${me.id} and rs.status = 'read')`)
   const condition = where.length ? and(...where) : undefined
 
   const order = f.sort === 'newest' ? [desc(books.createdAt)]
@@ -83,7 +88,8 @@ bookRoutes.openapi(getBook, async (c) => {
   const { id } = c.req.valid('param')
   const db = c.get('db')
 
-  const [book] = await db.select(bookColumnsFor(c.get('user')?.role === 'admin')).from(books).where(eq(books.id, id))
+  const me = c.get('user')!
+  const [book] = await db.select(bookColumnsFor(me.role === 'admin', me.id)).from(books).where(eq(books.id, id))
   if (!book) return problem(c, 404, `No book with id ${id}`)
 
   // Ratings are public: show the reader's name, never their email

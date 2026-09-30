@@ -25,6 +25,7 @@ import { metaRoutes } from './routes/meta'
 import { authRoutes } from './routes/auth'
 import { meRoutes } from './routes/me'
 import { adminRoutes } from './routes/admin'
+import { readingRoutes } from './routes/reading'
 import { loadUser, requireActive, requireAdmin } from './auth/guards'
 import { cookieName } from './auth/session'
 
@@ -62,6 +63,7 @@ export function buildApp(makeDb: (env: Bindings) => Db) {
   app.use('/api/books', requireActive)
   app.use('/api/categories', requireActive)
   app.use('/api/languages', requireActive)
+  app.use('/api/me/shelves', requireActive)     // Lesson 4.1 (/api/books/* is already covered)
   // Lesson 3.3: everything under /api/admin is for admins only
   app.use('/api/admin/*', requireAdmin)
 
@@ -85,6 +87,7 @@ export function buildApp(makeDb: (env: Bindings) => Db) {
   app.route('/api', metaRoutes)
   app.route('/api', meRoutes)
   app.route('/api/admin', adminRoutes)
+  app.route('/api', readingRoutes)
   app.route('/auth', authRoutes)
 
   // Lesson 3.2: tell OpenAPI (and Swagger, APIM) how clients authenticate: our session cookie

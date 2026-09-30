@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router'
 import { useBook } from '../api/hooks'
 import { Cover } from '../components/Cover'
 import { Stars } from '../components/Stars'
+import { MyReading } from '../components/MyReading'
 
 export function BookPage() {
   const { id = '' } = useParams()
@@ -43,6 +44,9 @@ export function BookPage() {
           </dl>
         </div>
       </div>
+
+      {/* key: start the form fresh when a DIFFERENT book is shown (not after my own save) */}
+      <MyReading key={book.id} book={book} />
 
       {/* Lesson 3.3: the API only sends these fields to admins */}
       {'price' in book && (

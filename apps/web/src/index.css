@@ -120,3 +120,29 @@ form.inline { display: inline; }
 .btn-small:disabled { opacity: .5; cursor: default; }
 .admin-box { margin-top: 20px; padding: 4px 16px 16px; border: 1px dashed var(--line); border-radius: 12px; }
 .role-chip { font-size: .7rem; vertical-align: middle; padding: 2px 8px; border-radius: 99px; background: var(--brand-soft); color: var(--brand); }
+
+/* Lesson 4.1: my reading */
+.badge-me { top: auto; bottom: 8px; left: auto; right: 8px; color: #fff; }
+.badge-to_read { background: #5b6b8c; } .badge-reading { background: #b7791f; } .badge-read { background: var(--good); }
+.my-reading { margin-top: 20px; padding: 4px 16px 16px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
+.segmented { display: inline-flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; flex-wrap: wrap; }
+.segmented button { padding: 8px 14px; border: 0; border-right: 1px solid var(--line); background: var(--surface); cursor: pointer; }
+.segmented button:last-child { border-right: 0; }
+.segmented button[aria-pressed=true] { background: var(--brand); color: #fff; font-weight: 600; }
+.rate { display: flex; align-items: center; gap: 10px; margin: 14px 0 6px; }
+.rate-label { font-weight: 600; }
+.star-input button { background: none; border: 0; font-size: 1.6rem; line-height: 1; padding: 0 2px; cursor: pointer; color: var(--line); }
+.star-input button.on { color: var(--star); }
+.my-reading textarea { width: 100%; max-width: 640px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); }
+.rate-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 8px; }
+.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); margin: 12px 0 16px; overflow-x: auto; }
+.tabs button { padding: 10px 14px; border: 0; background: none; cursor: pointer; border-bottom: 3px solid transparent; white-space: nowrap; }
+.tabs button[aria-selected=true] { border-bottom-color: var(--brand); font-weight: 600; }
+
+/* Lesson 4.1: phone header — the menu gets its own row (and scrolls sideways if it must) */
+@media (max-width: 600px) {
+  .topbar { flex-wrap: wrap; row-gap: 6px; padding: 10px 16px 6px; }
+  .topbar nav { order: 3; width: 100%; overflow-x: auto; gap: 18px; padding-bottom: 4px; }
+  .topbar nav a { white-space: nowrap; }
+  .multi-list { max-width: calc(100vw - 32px); }
+}

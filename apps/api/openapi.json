@@ -254,6 +254,32 @@
           "ratingCount": {
             "type": "integer"
           },
+          "myStatus": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "to_read",
+              "reading",
+              "read",
+              null
+            ]
+          },
+          "myRating": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 1,
+            "maximum": 5
+          },
+          "myReview": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "purchasedFrom": {
             "type": [
               "string",
@@ -317,7 +343,10 @@
           "categories",
           "available",
           "avgRating",
-          "ratingCount"
+          "ratingCount",
+          "myStatus",
+          "myRating",
+          "myReview"
         ]
       },
       "Problem": {
@@ -559,6 +588,120 @@
             ]
           }
         }
+      },
+      "MyBookState": {
+        "type": "object",
+        "properties": {
+          "bookId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "myStatus": {
+            "$ref": "#/components/schemas/ReadingState"
+          },
+          "myRating": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "myReview": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "avgRating": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "ratingCount": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "bookId",
+          "myStatus",
+          "myRating",
+          "myReview",
+          "avgRating",
+          "ratingCount"
+        ]
+      },
+      "ReadingState": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "enum": [
+          "to_read",
+          "reading",
+          "read",
+          null
+        ]
+      },
+      "SetStatus": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ReadingState"
+              },
+              {
+                "description": "null = take the book off my shelves"
+              }
+            ]
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "SetRating": {
+        "type": "object",
+        "properties": {
+          "rating": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5
+          },
+          "review": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 2000
+          }
+        },
+        "required": [
+          "rating"
+        ]
+      },
+      "ShelfCounts": {
+        "type": "object",
+        "properties": {
+          "to_read": {
+            "type": "integer"
+          },
+          "reading": {
+            "type": "integer"
+          },
+          "read": {
+            "type": "integer"
+          },
+          "rated": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "to_read",
+          "reading",
+          "read",
+          "rated"
+        ]
       }
     },
     "parameters": {}
@@ -687,6 +830,36 @@
             "required": false,
             "description": "true = only books with a free copy",
             "name": "available",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "to_read",
+                "reading",
+                "read",
+                "rated"
+              ],
+              "description": "Only books on MY shelf (or that I rated)"
+            },
+            "required": false,
+            "description": "Only books on MY shelf (or that I rated)",
+            "name": "shelf",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "true",
+                "false"
+              ],
+              "description": "true = leave out books I have read"
+            },
+            "required": false,
+            "description": "true = leave out books I have read",
+            "name": "hideRead",
             "in": "query"
           },
           {
@@ -1139,6 +1312,294 @@
           },
           "409": {
             "description": "Yourself, or the user still has books on loan",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/books/{id}/status": {
+      "put": {
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "tags": [
+          "My reading"
+        ],
+        "operationId": "setMyStatus",
+        "summary": "Put a book on one of my shelves (or take it off)",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "example": "3f5b2c1e-8d4a-4b6f-9a1e-2c7d8e9f0a1b"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetStatus"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The book as I see it now",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyBookState"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Account not active",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such book",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/books/{id}/rating": {
+      "put": {
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "tags": [
+          "My reading"
+        ],
+        "operationId": "setMyRating",
+        "summary": "Rate a book 1–5 (public), with an optional review",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "example": "3f5b2c1e-8d4a-4b6f-9a1e-2c7d8e9f0a1b"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetRating"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The book as I see it now",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyBookState"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Account not active",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such book",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "tags": [
+          "My reading"
+        ],
+        "operationId": "deleteMyRating",
+        "summary": "Remove my rating",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "example": "3f5b2c1e-8d4a-4b6f-9a1e-2c7d8e9f0a1b"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The book as I see it now",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyBookState"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Account not active",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such book",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/me/shelves": {
+      "get": {
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "tags": [
+          "My reading"
+        ],
+        "operationId": "myShelves",
+        "summary": "How many books are on each of my shelves",
+        "responses": {
+          "200": {
+            "description": "Counts",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShelfCounts"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in",
             "content": {
               "application/problem+json": {
                 "schema": {

@@ -24,6 +24,7 @@ export function CataloguePage() {
     category: params.getAll('category'),
     translations: params.get('translations') === 'true' ? 'true' : undefined,
     available: params.get('available') === 'true' ? 'true' : undefined,
+    hideRead: params.get('hideRead') === 'true' ? 'true' : undefined,     // Lesson 4.1
     sort: (params.get('sort') as BookFilters['sort']) || 'title',
     page: Number(params.get('page')) || 1,
     pageSize: 24,
@@ -93,6 +94,10 @@ export function CataloguePage() {
         <label className="check">
           <input type="checkbox" checked={filters.available === 'true'}
             onChange={(e) => update('available', e.target.checked ? 'true' : undefined)} /> Available now
+        </label>
+        <label className="check">
+          <input type="checkbox" checked={filters.hideRead === 'true'}
+            onChange={(e) => update('hideRead', e.target.checked ? 'true' : undefined)} /> Hide books I've read
         </label>
         {anyFilter && <button type="button" className="link" onClick={() => { setText(''); setParams({}) }}>Clear all</button>}
       </section>

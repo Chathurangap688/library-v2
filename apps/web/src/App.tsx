@@ -12,6 +12,7 @@ import { StatusPage } from './pages/StatusPage'
 import { LoginPage } from './pages/LoginPage'
 import { PendingPage } from './pages/PendingPage'
 import { AdminUsersPage } from './pages/AdminUsersPage'
+import { MyBooksPage } from './pages/MyBooksPage'
 
 export default function App() {
   const me = useMe()
@@ -32,6 +33,7 @@ export default function App() {
         <Link to="/" className="brand">📚 My Library</Link>
         <nav>
           <NavLink to="/" end>Catalogue</NavLink>
+          <NavLink to="/my-books">My books</NavLink>
           {isAdmin && <NavLink to="/admin/users">Users{waiting > 0 && <span className="count-badge" aria-label={`${waiting} waiting`}>{waiting}</span>}</NavLink>}
           <NavLink to="/status">Status</NavLink>
         </nav>
@@ -46,6 +48,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={<CataloguePage />} />
           <Route path="/books/:id" element={<BookPage />} />
+          <Route path="/my-books" element={<MyBooksPage />} />
           <Route path="/status" element={<StatusPage />} />
           <Route path="/admin/users" element={isAdmin ? <AdminUsersPage me={user} /> : <div className="empty"><h1>Admins only</h1><Link to="/">← Catalogue</Link></div>} />
           <Route path="*" element={<div className="empty"><h1>Page not found</h1><Link to="/">← Catalogue</Link></div>} />
