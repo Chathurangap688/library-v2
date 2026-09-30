@@ -16,7 +16,9 @@ import { books, ratings, readingStatus } from '../db/schema'
 import { problem } from '../lib/problem'
 import { validationHook } from '../lib/validate'
 import { bookExtras, myBookColumns } from '../lib/books'
-import { BookIdParam, MyBookState, SetRating, SetStatus, ShelfCounts, problemResponse } from '../lib/schemas'
+import { BookIdParam, MyBookState, Recommendation, SetRating, SetStatus, ShelfCounts, problemResponse } from '../lib/schemas'
+import { recommend } from '../lib/recommend'
+import { z } from '@hono/zod-openapi'
 import type { Db } from '../db/client'
 
 export const readingRoutes = new OpenAPIHono<AppEnv>({ defaultHook: validationHook })
@@ -94,4 +96,15 @@ readingRoutes.openapi(createRoute({
     rated: sql<number>`(select count(*) from ratings r where r.user_id = ${me.id})::int`,
   }).from(readingStatus).where(eq(readingStatus.userId, me.id))
   return c.json(row, 200)
+})
+
+// Lesson 4.2
+readingRoutes.openapi(createRoute({
+  ...secured, method: 'get', path: '/me/recommendations', operationId: 'myRecommendations',
+  summary: 'Books I have not touched yet, best match first, each with a reason',
+  request: { query: z.object({ limit: z.coerce.number().int().min(1).max(24).default(8) }) },
+  responses: { 200: { description: 'Recommendations', content: { 'application/json': { schema: z.array(Recommendation) } } }, 401: problemResponse('Not signed in') },
+}), async (c) => {
+  const { limit } = c.req.valid('query')
+  return c.json(await recommend(c.get('db'), c.get('user')!, limit), 200)
 })

@@ -64,6 +64,7 @@ export function buildApp(makeDb: (env: Bindings) => Db) {
   app.use('/api/categories', requireActive)
   app.use('/api/languages', requireActive)
   app.use('/api/me/shelves', requireActive)     // Lesson 4.1 (/api/books/* is already covered)
+  app.use('/api/me/recommendations', requireActive)   // Lesson 4.2
   // Lesson 3.3: everything under /api/admin is for admins only
   app.use('/api/admin/*', requireAdmin)
 

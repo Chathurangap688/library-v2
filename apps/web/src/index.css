@@ -146,3 +146,11 @@ form.inline { display: inline; }
   .topbar nav a { white-space: nowrap; }
   .multi-list { max-width: calc(100vw - 32px); }
 }
+
+/* Lesson 4.2: recommendations row */
+.recs { margin: 8px 0 20px; }
+.recs h2 { margin: 8px 0 10px; }
+.recs-row { display: grid; grid-auto-flow: column; grid-auto-columns: 160px; gap: 14px; overflow-x: auto;
+  padding-bottom: 8px; scroll-snap-type: x mandatory; }
+.rec { scroll-snap-align: start; display: grid; gap: 4px; align-content: start; }
+.rec-reason { margin: 0; font-size: .8rem; color: var(--muted); line-height: 1.3; }

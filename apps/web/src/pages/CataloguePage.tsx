@@ -7,6 +7,7 @@ import { useSearchParams } from 'react-router'
 import { useBooks, useCategories, useLanguages, type BookFilters } from '../api/hooks'
 import { BookCard } from '../components/BookCard'
 import { Pagination } from '../components/Pagination'
+import { RecommendedRow } from '../components/RecommendedRow'
 
 const SORTS = [
   { value: 'title', label: 'Title A–Z' },
@@ -101,6 +102,9 @@ export function CataloguePage() {
         </label>
         {anyFilter && <button type="button" className="link" onClick={() => { setText(''); setParams({}) }}>Clear all</button>}
       </section>
+
+      {/* Lesson 4.2: suggestions on the plain first page only (not while searching or filtering) */}
+      {!anyFilter && <RecommendedRow />}
 
       <p className="muted count" aria-live="polite">
         {books.isPending ? 'Loading books…'

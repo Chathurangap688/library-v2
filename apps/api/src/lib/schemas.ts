@@ -161,3 +161,10 @@ export const MyBookState = z.object({
 export const ShelfCounts = z.object({
   to_read: z.number().int(), reading: z.number().int(), read: z.number().int(), rated: z.number().int(),
 }).openapi('ShelfCounts')
+
+// ---- recommendations (Lesson 4.2) ----
+export const Recommendation = z.object({
+  book: Book,
+  score: z.number().openapi({ description: '0–1, higher = better match' }),
+  reason: z.string().openapi({ example: 'Because you liked other books by Martin Wickramasinghe' }),
+}).openapi('Recommendation')

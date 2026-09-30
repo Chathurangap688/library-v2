@@ -210,6 +210,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/me/recommendations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Books I have not touched yet, best match first, each with a reason */
+        get: operations["myRecommendations"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -381,6 +398,13 @@ export interface components {
             reading: number;
             read: number;
             rated: number;
+        };
+        Recommendation: {
+            book: components["schemas"]["Book"];
+            /** @description 0–1, higher = better match */
+            score: number;
+            /** @example Because you liked other books by Martin Wickramasinghe */
+            reason: string;
         };
     };
     responses: never;
@@ -985,6 +1009,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ShelfCounts"];
+                };
+            };
+            /** @description Not signed in */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    myRecommendations: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Recommendations */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Recommendation"][];
                 };
             };
             /** @description Not signed in */

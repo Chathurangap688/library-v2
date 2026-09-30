@@ -702,6 +702,27 @@
           "read",
           "rated"
         ]
+      },
+      "Recommendation": {
+        "type": "object",
+        "properties": {
+          "book": {
+            "$ref": "#/components/schemas/Book"
+          },
+          "score": {
+            "type": "number",
+            "description": "0–1, higher = better match"
+          },
+          "reason": {
+            "type": "string",
+            "example": "Because you liked other books by Martin Wickramasinghe"
+          }
+        },
+        "required": [
+          "book",
+          "score",
+          "reason"
+        ]
       }
     },
     "parameters": {}
@@ -1594,6 +1615,58 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ShelfCounts"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/me/recommendations": {
+      "get": {
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "tags": [
+          "My reading"
+        ],
+        "operationId": "myRecommendations",
+        "summary": "Books I have not touched yet, best match first, each with a reason",
+        "parameters": [
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 24,
+              "default": 8
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Recommendations",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Recommendation"
+                  }
                 }
               }
             }

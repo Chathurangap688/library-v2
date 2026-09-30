@@ -138,3 +138,12 @@ export function useDeleteRating() {
     onSuccess: after,
   })
 }
+
+// ---- Lesson 4.2: recommendations (they change when I rate or shelve a book) ----
+export function useRecommendations(limit = 8) {
+  return useQuery({
+    queryKey: ['books', 'recommendations', limit],     // starts with 'books' → refreshed after my changes
+    queryFn: async () => unwrap(await api.GET('/api/me/recommendations', { params: { query: { limit } } })),
+    staleTime: 5 * 60_000,
+  })
+}
