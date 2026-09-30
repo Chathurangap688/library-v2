@@ -102,3 +102,21 @@ button.link { background: none; border: 0; color: var(--brand); cursor: pointer;
 .link.on-dark { color: #fff; }
 form.inline { display: inline; }
 @media (max-width: 600px) { .user-name { display: none; } .topbar { gap: 12px; } }
+
+/* Lesson 3.3: admin */
+.count-badge { display: inline-block; min-width: 18px; margin-left: 6px; padding: 0 5px; border-radius: 99px;
+  background: #e8a33d; color: #1d2322; font-size: .75rem; font-weight: 700; text-align: center; }
+.user-list { list-style: none; padding: 0; display: grid; gap: 8px; }
+.user-row { display: flex; align-items: center; gap: 12px; background: var(--surface); border: 1px solid var(--line);
+  border-radius: 12px; padding: 10px 14px; flex-wrap: wrap; }
+.user-row.is-pending { border-color: #e8a33d; }
+.user-row .avatar { width: 40px; height: 40px; }
+.avatar-empty { display: grid; place-items: center; background: var(--brand-soft); color: var(--brand); font-weight: 700; }
+.user-info { display: grid; flex: 1 1 240px; }
+.user-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+.btn-small { padding: 6px 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); cursor: pointer; }
+.btn-small.primary { background: var(--brand); border-color: var(--brand); color: #fff; }
+.btn-small.danger { color: var(--bad); }
+.btn-small:disabled { opacity: .5; cursor: default; }
+.admin-box { margin-top: 20px; padding: 4px 16px 16px; border: 1px dashed var(--line); border-radius: 12px; }
+.role-chip { font-size: .7rem; vertical-align: middle; padding: 2px 8px; border-radius: 99px; background: var(--brand-soft); color: var(--brand); }

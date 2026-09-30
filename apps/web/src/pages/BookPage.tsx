@@ -44,6 +44,20 @@ export function BookPage() {
         </div>
       </div>
 
+      {/* Lesson 3.3: the API only sends these fields to admins */}
+      {'price' in book && (
+        <section className="admin-box">
+          <h2>Purchase details <span className="role-chip">Admin</span></h2>
+          <dl className="facts">
+            <div><dt>Bought from</dt><dd>{book.purchasedFrom ?? '—'}</dd></div>
+            <div><dt>Purchase date</dt><dd>{book.purchaseDate ?? '—'}</dd></div>
+            <div><dt>Price</dt><dd>{book.price ? `LKR ${Number(book.price).toLocaleString()}` : '—'}</dd></div>
+            <div><dt>Added by</dt><dd>{book.addedByName ?? '—'}</dd></div>
+            {book.notes && <div><dt>Notes</dt><dd>{book.notes}</dd></div>}
+          </dl>
+        </section>
+      )}
+
       {book.description && <section><h2>About this book</h2><p className="prose">{book.description}</p></section>}
       {book.reviewSummary && <section><h2>What readers say</h2><p className="prose">{book.reviewSummary}</p></section>}
 

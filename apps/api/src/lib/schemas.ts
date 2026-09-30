@@ -58,6 +58,12 @@ export const Book = z.object({
   available: z.number().int().openapi({ description: 'copies minus open loans' }),
   avgRating: z.number().nullable().openapi({ example: 4.5 }),
   ratingCount: z.number().int(),
+  // Lesson 3.3: only in answers to ADMINS (the server leaves them out for everyone else)
+  purchasedFrom: z.string().nullable().optional().openapi({ description: 'admins only' }),
+  purchaseDate: z.string().nullable().optional().openapi({ description: 'admins only', format: 'date' }),
+  price: z.string().nullable().optional().openapi({ description: 'admins only (LKR)', example: '950.00' }),
+  notes: z.string().nullable().optional().openapi({ description: 'admins only' }),
+  addedByName: z.string().nullable().optional().openapi({ description: 'admins only' }),
 }).openapi('Book')
 
 export const PublicRating = z.object({
@@ -107,3 +113,22 @@ export const Me = z.object({
   role: z.enum(['user', 'admin']),
   status: z.enum(['pending', 'active']),
 }).openapi('Me')
+
+// ---- admin (Lesson 3.3) ----
+export const AdminUser = Me.extend({
+  createdAt: z.string().openapi({ format: 'date-time' }),
+  lastLoginAt: z.string().nullable().openapi({ format: 'date-time' }),
+  linked: z.boolean().openapi({ description: 'has signed in with Asgardeo at least once' }),
+  readCount: z.number().int(),
+  openLoans: z.number().int(),
+}).openapi('AdminUser')
+
+export const UserIdParam = z.object({
+  id: z.uuid().openapi({ param: { name: 'id', in: 'path' } }),
+})
+
+export const UpdateUser = z.object({
+  status: z.enum(['pending', 'active']).optional(),
+  role: z.enum(['user', 'admin']).optional(),
+}).refine((v) => v.status !== undefined || v.role !== undefined, { message: 'Send status and/or role' })
+  .openapi('UpdateUser')

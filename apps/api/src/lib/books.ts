@@ -52,3 +52,16 @@ export const searchText = sql`concat_ws(' ', ${books.title}, ${books.titleSingli
 // The Latin-letter fields, for the loose Singlish match
 export const searchLatin = sql`concat_ws(' ', ${books.titleSinglish}, ${books.authorSinglish},
   ${books.originalTitle}, ${books.originalAuthor}, ${books.title}, ${books.author})`
+
+// Lesson 3.3: the private fields — added to the SELECT only when an admin asks
+export const adminBookColumns = {
+  purchasedFrom: books.purchasedFrom,
+  purchaseDate: books.purchaseDate,
+  price: books.price,
+  notes: books.notes,
+  addedByName: sql<string | null>`(select coalesce(u.name, u.email) from users u where u.id = books.added_by)`,
+}
+
+/** Which columns this user may see */
+export const bookColumnsFor = (isAdmin: boolean) =>
+  isAdmin ? { ...publicBookColumns, ...bookExtras, ...adminBookColumns } : { ...publicBookColumns, ...bookExtras }

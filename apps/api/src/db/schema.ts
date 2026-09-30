@@ -126,3 +126,15 @@ export const loans = pgTable('loans', {
   // Fast "what is out right now?" — only open loans are in this index
   index('loans_open_idx').on(t.bookId).where(sql`${t.returnedAt} is null`),
 ])
+
+// ---- audit_log (Lesson 3.3): who changed what, and when --------------------
+// Append-only: rows are only ever inserted. Useful for "who activated this user?"
+export const auditLog = pgTable('audit_log', {
+  id: serial('id').primaryKey(),
+  at: timestamp('at', { withTimezone: true }).notNull().defaultNow(),
+  actorId: uuid('actor_id').references(() => users.id, { onDelete: 'set null' }),
+  action: text('action').notNull(),              // e.g. 'user.activate', 'user.role', 'user.delete'
+  targetType: text('target_type').notNull(),     // 'user', later 'book', 'loan'…
+  targetId: text('target_id'),
+  details: jsonb('details').$type<Record<string, unknown>>(),
+}, (t) => [index('audit_log_at_idx').on(t.at)])

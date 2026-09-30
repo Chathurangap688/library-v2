@@ -12,7 +12,7 @@ import type { AppEnv } from '../types'
 import { books, ratings, users } from '../db/schema'
 import { problem } from '../lib/problem'
 import { validationHook } from '../lib/validate'
-import { bookExtras, publicBookColumns, searchLatin, searchText, singlishKey, singlishKeySql } from '../lib/books'
+import { bookColumnsFor, bookExtras, searchLatin, searchText, singlishKey, singlishKeySql } from '../lib/books'
 import { BookDetail, BookIdParam, BookPage, ListBooksQuery, problemResponse } from '../lib/schemas'
 
 export const bookRoutes = new OpenAPIHono<AppEnv>({ defaultHook: validationHook })
@@ -32,6 +32,7 @@ const listBooks = createRoute({
 bookRoutes.openapi(listBooks, async (c) => {
   const f = c.req.valid('query')
   const db = c.get('db')
+  const columns = bookColumnsFor(c.get('user')?.role === 'admin')   // Lesson 3.3: admins see private fields
   const categoryNames = f.category === undefined ? [] : Array.isArray(f.category) ? f.category : [f.category]
 
   // Build the WHERE part from the filters that were given
@@ -57,7 +58,7 @@ bookRoutes.openapi(listBooks, async (c) => {
 
   // Two queries in parallel: this page of books + the total count (for "page 2 of 5")
   const [items, [{ total }]] = await Promise.all([
-    db.select({ ...publicBookColumns, ...bookExtras }).from(books).where(condition)
+    db.select(columns).from(books).where(condition)
       .orderBy(...order).limit(f.pageSize).offset((f.page - 1) * f.pageSize),
     db.select({ total: sql<number>`count(*)::int` }).from(books).where(condition),
   ])
@@ -82,7 +83,7 @@ bookRoutes.openapi(getBook, async (c) => {
   const { id } = c.req.valid('param')
   const db = c.get('db')
 
-  const [book] = await db.select({ ...publicBookColumns, ...bookExtras }).from(books).where(eq(books.id, id))
+  const [book] = await db.select(bookColumnsFor(c.get('user')?.role === 'admin')).from(books).where(eq(books.id, id))
   if (!book) return problem(c, 404, `No book with id ${id}`)
 
   // Ratings are public: show the reader's name, never their email
