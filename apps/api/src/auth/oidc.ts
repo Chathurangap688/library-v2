@@ -52,7 +52,10 @@ export async function startLogin(env: Bindings) {
 export async function finishLogin(env: Bindings, callbackUrl: URL, expected: { state: string; nonce: string; codeVerifier: string }) {
   const as = await authServer(env)
   const params = oauth.validateAuthResponse(as, client(env), callbackUrl, expected.state)
-  const res = await oauth.authorizationCodeGrantRequest(as, client(env), oauth.ClientSecretBasic(env.ASGARDEO_CLIENT_SECRET),
+  // client_secret_post: id + secret in the form body. (With Basic auth the standard URL-encodes
+  // the secret first, and a secret containing + / = then no longer matches on the Asgardeo side.)
+  const clientAuth = oauth.ClientSecretPost(env.ASGARDEO_CLIENT_SECRET.trim())
+  const res = await oauth.authorizationCodeGrantRequest(as, client(env), clientAuth,
     params, redirectUri(env), expected.codeVerifier, { [oauth.allowInsecureRequests]: insecureOk(env) })
   const tokens = await oauth.processAuthorizationCodeResponse(as, client(env), res,
     { expectedNonce: expected.nonce, requireIdToken: true })

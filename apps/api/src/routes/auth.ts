@@ -32,14 +32,22 @@ authRoutes.get('/callback', async (c) => {
   const pending = await takePendingLogin(c, callbackUrl.searchParams.get('state') ?? undefined)
   if (!pending) return c.redirect('/?login_error=' + encodeURIComponent('Sign-in expired, please try again'), 302)
 
-  // Our callback URL must be the registered one (APP_ORIGIN), whatever host served the request
-  const registered = new URL(`${c.env.APP_ORIGIN}/auth/callback${callbackUrl.search}`)
-  const { claims, idToken } = await finishLogin(c.env, registered, {
-    state: callbackUrl.searchParams.get('state')!, nonce: pending.nonce, codeVerifier: pending.codeVerifier,
-  })
-  const user = await upsertUserFromClaims(c.get('db'), c.env, claims)
-  await createSession(c, { userId: user.id, idToken })
-  return c.redirect(pending.returnTo, 302)
+  try {
+    // Our callback URL must be the registered one (APP_ORIGIN), whatever host served the request
+    const registered = new URL(`${c.env.APP_ORIGIN}/auth/callback${callbackUrl.search}`)
+    const { claims, idToken } = await finishLogin(c.env, registered, {
+      state: callbackUrl.searchParams.get('state')!, nonce: pending.nonce, codeVerifier: pending.codeVerifier,
+    })
+    const user = await upsertUserFromClaims(c.get('db'), c.env, claims)
+    await createSession(c, { userId: user.id, idToken })
+    return c.redirect(pending.returnTo, 302)
+  } catch (err) {
+    // Log the full reason (see it with `npx wrangler tail` or Workers → Logs), show a short one
+    const e = err as Error & { code?: string; cause?: unknown; error?: string; error_description?: string }
+    console.error('login callback failed:', e.name, e.code ?? '', e.message, JSON.stringify(e.cause ?? e.error ?? ''))
+    const reason = e.error_description ?? e.error ?? e.message ?? 'unknown error'
+    return c.redirect('/?login_error=' + encodeURIComponent(`Sign-in failed: ${reason}`), 302)
+  }
 })
 
 authRoutes.post('/logout', async (c) => {
