@@ -8,6 +8,7 @@
     "dev:web": "npm run dev -w apps/web",
     "dev:api": "npm run dev -w apps/api",
     "build:web": "npm run build -w apps/web",
-    "deploy:api": "npm run deploy -w apps/api"
+    "deploy:api": "npm run deploy -w apps/api",
+    "contract": "npm run openapi -w apps/api && npm run api:types -w apps/web"
   }
 }

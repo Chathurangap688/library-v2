@@ -1,0 +1,700 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "My Library API",
+    "version": "0.2.0",
+    "description": "Books, categories and ratings of the home library. Errors use RFC 9457 Problem Details."
+  },
+  "servers": [
+    {
+      "url": "https://library.bmcpthilakawansha.workers.dev",
+      "description": "production"
+    },
+    {
+      "url": "http://localhost:8787",
+      "description": "local wrangler dev"
+    }
+  ],
+  "components": {
+    "schemas": {
+      "Health": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          },
+          "service": {
+            "type": "string"
+          },
+          "time": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "ok",
+          "service",
+          "time"
+        ]
+      },
+      "DbHealth": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          },
+          "database": {
+            "type": "string"
+          },
+          "now": {
+            "type": "string"
+          },
+          "ms": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "ok",
+          "database",
+          "now",
+          "ms"
+        ]
+      },
+      "BookPage": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Book"
+            }
+          },
+          "page": {
+            "type": "integer"
+          },
+          "pageSize": {
+            "type": "integer"
+          },
+          "total": {
+            "type": "integer"
+          },
+          "pages": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "page",
+          "pageSize",
+          "total",
+          "pages"
+        ]
+      },
+      "Book": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string",
+            "example": "මඩොල් දූව"
+          },
+          "titleSinglish": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "example": "Madol Doova"
+          },
+          "author": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "authorSinglish": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "language": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "example": "Sinhala"
+          },
+          "isTranslation": {
+            "type": "boolean"
+          },
+          "translator": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "originalTitle": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "originalAuthor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "isbn": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "publisher": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "year": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "reviewSummary": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "webSources": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "object",
+              "properties": {
+                "title": {
+                  "type": "string"
+                },
+                "url": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "title",
+                "url"
+              ]
+            }
+          },
+          "coverUrl": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "copies": {
+            "type": "integer"
+          },
+          "shelf": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "categories": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "example": [
+              "Novel",
+              "Classic"
+            ]
+          },
+          "available": {
+            "type": "integer",
+            "description": "copies minus open loans"
+          },
+          "avgRating": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "example": 4.5
+          },
+          "ratingCount": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "titleSinglish",
+          "author",
+          "authorSinglish",
+          "language",
+          "isTranslation",
+          "translator",
+          "originalTitle",
+          "originalAuthor",
+          "isbn",
+          "publisher",
+          "year",
+          "description",
+          "reviewSummary",
+          "webSources",
+          "coverUrl",
+          "copies",
+          "shelf",
+          "createdAt",
+          "updatedAt",
+          "categories",
+          "available",
+          "avgRating",
+          "ratingCount"
+        ]
+      },
+      "Problem": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "example": "about:blank"
+          },
+          "title": {
+            "type": "string",
+            "example": "Bad Request"
+          },
+          "status": {
+            "type": "integer",
+            "example": 400
+          },
+          "detail": {
+            "type": "string",
+            "example": "pageSize: Too big: expected number to be <=100"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "field": {
+                  "type": "string"
+                },
+                "message": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "field",
+                "message"
+              ]
+            }
+          }
+        },
+        "required": [
+          "type",
+          "title",
+          "status"
+        ]
+      },
+      "BookDetail": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Book"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "ratings": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/PublicRating"
+                }
+              }
+            },
+            "required": [
+              "ratings"
+            ]
+          }
+        ]
+      },
+      "PublicRating": {
+        "type": "object",
+        "properties": {
+          "rating": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5
+          },
+          "review": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "name": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "the reader's name (never the email)"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "rating",
+          "review",
+          "name",
+          "updatedAt"
+        ]
+      },
+      "Category": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "bookCount": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "bookCount"
+        ]
+      },
+      "Language": {
+        "type": "object",
+        "properties": {
+          "language": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "bookCount": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "language",
+          "bookCount"
+        ]
+      }
+    },
+    "parameters": {}
+  },
+  "paths": {
+    "/api/health": {
+      "get": {
+        "tags": [
+          "Health"
+        ],
+        "operationId": "health",
+        "summary": "Is the API up?",
+        "responses": {
+          "200": {
+            "description": "Up",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Health"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/health/db": {
+      "get": {
+        "tags": [
+          "Health"
+        ],
+        "operationId": "healthDb",
+        "summary": "Is the database reachable?",
+        "responses": {
+          "200": {
+            "description": "Reachable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DbHealth"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/books": {
+      "get": {
+        "tags": [
+          "Books"
+        ],
+        "operationId": "listBooks",
+        "summary": "List books (search, filter, sort, page)",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 100,
+              "description": "Search title, author, translator… (Sinhala, English or Singlish)",
+              "example": "madol"
+            },
+            "required": false,
+            "description": "Search title, author, translator… (Sinhala, English or Singlish)",
+            "name": "q",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 40,
+              "example": "Sinhala"
+            },
+            "required": false,
+            "name": "language",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              ],
+              "description": "Repeat for several: ?category=Novel&category=War (a book needs at least one)"
+            },
+            "required": false,
+            "description": "Repeat for several: ?category=Novel&category=War (a book needs at least one)",
+            "name": "category",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "true",
+                "false"
+              ],
+              "description": "true = only translated books"
+            },
+            "required": false,
+            "description": "true = only translated books",
+            "name": "translations",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "true",
+                "false"
+              ],
+              "description": "true = only books with a free copy"
+            },
+            "required": false,
+            "description": "true = only books with a free copy",
+            "name": "available",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "title",
+                "newest",
+                "rating"
+              ],
+              "default": "title"
+            },
+            "required": false,
+            "name": "sort",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            },
+            "required": false,
+            "name": "page",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 24
+            },
+            "required": false,
+            "name": "pageSize",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "One page of books",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookPage"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The query string is not valid",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/books/{id}": {
+      "get": {
+        "tags": [
+          "Books"
+        ],
+        "operationId": "getBook",
+        "summary": "One book with its public ratings",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "example": "3f5b2c1e-8d4a-4b6f-9a1e-2c7d8e9f0a1b"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The book",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The id is not a valid UUID",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No book with this id",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/categories": {
+      "get": {
+        "tags": [
+          "Meta"
+        ],
+        "operationId": "listCategories",
+        "summary": "All categories with how many books each has",
+        "responses": {
+          "200": {
+            "description": "Categories A–Z",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Category"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/languages": {
+      "get": {
+        "tags": [
+          "Meta"
+        ],
+        "operationId": "listLanguages",
+        "summary": "Book languages with counts",
+        "responses": {
+          "200": {
+            "description": "Languages A–Z",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Language"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "webhooks": {}
+}

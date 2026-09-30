@@ -13,7 +13,9 @@ const TITLES: Record<number, string> = {
   409: 'Conflict', 422: 'Unprocessable Content', 500: 'Internal Server Error',
 }
 
-export function problem(c: Context, status: ContentfulStatusCode, detail?: string, extra?: Record<string, unknown>) {
-  const body = { type: 'about:blank', title: TITLES[status] ?? 'Error', status, detail, ...extra }
-  return c.body(JSON.stringify(body), status, { 'Content-Type': 'application/problem+json' })
+// <S> keeps the exact status (404, not "any status") so OpenAPI routes can check the answer type
+export function problem<S extends ContentfulStatusCode>(c: Context, status: S, detail?: string, extra?: Record<string, unknown>) {
+  const body = { type: 'about:blank', title: TITLES[status] ?? 'Error', status: status as number, detail, ...extra }
+  // c.json keeps the response TYPED (OpenAPI routes check it); we only change the Content-Type
+  return c.json(body, status, { 'Content-Type': 'application/problem+json' })
 }

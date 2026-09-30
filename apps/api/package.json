@@ -9,10 +9,12 @@
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
     "typecheck": "tsc --noEmit",
-    "db:import": "tsx scripts/import-sheets.ts"
+    "db:import": "tsx scripts/import-sheets.ts",
+    "openapi": "tsx scripts/openapi.ts"
   },
   "dependencies": {
-    "@hono/zod-validator": "^0.9.1",
+    "@hono/swagger-ui": "^0.6.1",
+    "@hono/zod-openapi": "^1.6.3",
     "@neondatabase/serverless": "^1.1.0",
     "drizzle-orm": "^0.45.3",
     "hono": "^4.13.11",

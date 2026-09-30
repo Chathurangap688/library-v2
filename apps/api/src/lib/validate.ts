@@ -1,16 +1,17 @@
 /**
- * Lesson 2.1: check the input (query string, JSON body, URL params) with Zod BEFORE
- * our code runs. Bad input → 400 Problem Details listing every field that is wrong.
+ * Lesson 2.1/2.2: what happens when the input does not match the schema.
+ * Used as the `defaultHook` of every OpenAPIHono router → 400 Problem Details
+ * listing every wrong field.
  */
-import { zValidator } from '@hono/zod-validator'
-import type { ValidationTargets } from 'hono'
-import type { ZodType } from 'zod'
+import type { Context } from 'hono'
+import type { ZodError } from 'zod'
 import { problem } from './problem'
 
-export const validate = <T extends ZodType, K extends keyof ValidationTargets>(target: K, schema: T) =>
-  zValidator(target, schema, (result, c) => {
-    if (!result.success) {
-      const errors = result.error.issues.map((i) => ({ field: i.path.join('.') || target, message: i.message }))
-      return problem(c, 400, errors.map((e) => `${e.field}: ${e.message}`).join('; '), { errors })
-    }
-  })
+type HookResult = { success: true } | { success: false; error: ZodError; target?: string }
+
+export function validationHook(result: HookResult, c: Context) {
+  if (!result.success) {
+    const errors = result.error.issues.map((i) => ({ field: i.path.join('.') || 'input', message: i.message }))
+    return problem(c, 400, errors.map((e) => `${e.field}: ${e.message}`).join('; '), { errors })
+  }
+}

@@ -44,6 +44,8 @@ jobs:
         with: { node-version: 22, cache: npm }
       - run: npm ci
       - run: npm run typecheck -w apps/api     # stop here if the TypeScript has errors
+      # Lesson 2.2: the committed contract must match the code (run `npm run contract` locally)
+      - run: npm run contract && git diff --exit-code apps/api/openapi.json apps/web/src/api/schema.d.ts
       - uses: cloudflare/wrangler-action@v3
         with:
           workingDirectory: apps/api

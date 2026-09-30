@@ -1,37 +1,41 @@
 import { useEffect, useState } from 'react'
+import { api } from './api/client'
 import './App.css'
 
-// The shape of the JSON that GET /api/health returns (see apps/api/src/index.ts)
-type Health = { ok: boolean; service: string; time: string }
+type Status = { service: string; time: string; books: number }
 
 function App() {
-  const [health, setHealth] = useState<Health | null>(null)
+  const [status, setStatus] = useState<Status | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  // Runs once when the page opens: ask the API if it is alive.
+  // Runs once when the page opens. Lesson 2.2: the calls are TYPED from openapi.json.
   useEffect(() => {
-    fetch('/api/health')
-      .then((res) => {
-        if (!res.ok) throw new Error('HTTP ' + res.status)
-        return res.json() as Promise<Health>
+    Promise.all([api.GET('/api/health'), api.GET('/api/books', { params: { query: { pageSize: 1 } } })])
+      .then(([health, books]) => {
+        if (!health.data) throw new Error('API not reachable')
+        if (!books.data) throw new Error(books.error?.detail ?? 'Could not load books')
+        setStatus({ service: health.data.service, time: health.data.time, books: books.data.total })
       })
-      .then(setHealth)
       .catch((err: Error) => setError(err.message))
   }, [])
 
   return (
     <main className="shell">
       <h1>My Library v2</h1>
-      <p className="muted">Phase 0 · the Worker serves this page and the API from one address.</p>
+      <p className="muted">Phase 2 · the API is described by OpenAPI and this page uses its generated types.</p>
 
       <section className="card">
         <h2>API status</h2>
-        {error && <p className="bad">✗ API not reachable: {error}</p>}
-        {!error && !health && <p className="muted">Checking…</p>}
-        {health && (
-          <p className="good">
-            ✓ {health.service} is up <span className="muted">({new Date(health.time).toLocaleString()})</span>
-          </p>
+        {error && <p className="bad">✗ {error}</p>}
+        {!error && !status && <p className="muted">Checking…</p>}
+        {status && (
+          <>
+            <p className="good">
+              ✓ {status.service} is up <span className="muted">({new Date(status.time).toLocaleString()})</span>
+            </p>
+            <p>📚 {status.books} books in the database</p>
+            <p><a href="/api/docs">Open the API docs →</a></p>
+          </>
         )}
       </section>
     </main>

@@ -7,9 +7,11 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "api:types": "npx -y openapi-typescript@7.13.0 ../api/openapi.json -o src/api/schema.d.ts"
   },
   "dependencies": {
+    "openapi-fetch": "^0.17.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"
   },
