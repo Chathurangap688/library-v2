@@ -27,6 +27,8 @@ import { meRoutes } from './routes/me'
 import { adminRoutes } from './routes/admin'
 import { readingRoutes } from './routes/reading'
 import { adminBookRoutes } from './routes/adminBooks'
+import { adminAiRoutes } from './routes/adminAi'
+import { coverRoutes } from './routes/covers'
 import { loadUser, requireActive, requireAdmin } from './auth/guards'
 import { cookieName } from './auth/session'
 
@@ -51,7 +53,7 @@ export function buildApp(makeDb: (env: Bindings) => Db) {
   app.use('*', csrf({ origin: (origin, c) => origin === c.env.APP_ORIGIN }))
 
   // Give every API/auth request its own database handle (c.get('db')) and the signed-in user (c.get('user'))
-  for (const path of ['/api/*', '/auth/*']) {
+  for (const path of ['/api/*', '/auth/*', '/covers/*']) {
     app.use(path, async (c, next) => {
       c.set('db', makeDb(c.env))
       await next()
@@ -68,6 +70,7 @@ export function buildApp(makeDb: (env: Bindings) => Db) {
   app.use('/api/me/recommendations', requireActive)   // Lesson 4.2
   // Lesson 3.3: everything under /api/admin is for admins only
   app.use('/api/admin/*', requireAdmin)
+  app.use('/covers/*', requireActive)            // Lesson 4.4: covers are private too
 
   // ---- API ----
   app.openapi(createRoute({
@@ -89,7 +92,9 @@ export function buildApp(makeDb: (env: Bindings) => Db) {
   app.route('/api', metaRoutes)
   app.route('/api', meRoutes)
   app.route('/api/admin/books', adminBookRoutes)   // Lesson 4.3 (before /api/admin so /books is matched here)
+  app.route('/api/admin', adminAiRoutes)          // Lesson 4.4: /ai/read-cover, /ai/lookup, /covers
   app.route('/api/admin', adminRoutes)
+  app.route('/covers', coverRoutes)
   app.route('/api', readingRoutes)
   app.route('/auth', authRoutes)
 

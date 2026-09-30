@@ -689,12 +689,20 @@
           "coverUrl": {
             "anyOf": [
               {
-                "type": [
-                  "string",
-                  "null"
-                ],
-                "maxLength": 1000,
-                "format": "uri"
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "maxLength": 1000,
+                    "format": "uri"
+                  },
+                  {
+                    "type": "string",
+                    "pattern": "^\\/covers\\/[0-9a-f-]{36}\\.(jpg|png|webp)$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
               },
               {
                 "type": "string",
@@ -785,6 +793,190 @@
         },
         "required": [
           "title"
+        ]
+      },
+      "CoverDraft": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "author": {
+            "type": "string"
+          },
+          "titleSinglish": {
+            "type": "string"
+          },
+          "authorSinglish": {
+            "type": "string"
+          },
+          "translator": {
+            "type": "string"
+          },
+          "originalTitle": {
+            "type": "string"
+          },
+          "language": {
+            "type": "string"
+          },
+          "isTranslation": {
+            "type": "boolean"
+          },
+          "categories": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "isbn": {
+            "type": "string"
+          },
+          "publisher": {
+            "type": "string"
+          },
+          "year": {
+            "type": "string"
+          },
+          "confidence": {
+            "type": "number"
+          },
+          "coverBox": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "number"
+            },
+            "description": "[ymin, xmin, ymax, xmax] on a 0–1000 scale"
+          }
+        },
+        "required": [
+          "title",
+          "author",
+          "titleSinglish",
+          "authorSinglish",
+          "translator",
+          "originalTitle",
+          "language",
+          "isTranslation",
+          "categories",
+          "isbn",
+          "publisher",
+          "year",
+          "confidence",
+          "coverBox"
+        ]
+      },
+      "LookupResult": {
+        "type": "object",
+        "properties": {
+          "found": {
+            "type": "boolean"
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "web",
+              "ai",
+              "googlebooks",
+              "sources",
+              "none"
+            ]
+          },
+          "description": {
+            "type": "string"
+          },
+          "reviewSummary": {
+            "type": "string"
+          },
+          "categories": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "translator": {
+            "type": "string"
+          },
+          "originalTitle": {
+            "type": "string"
+          },
+          "originalAuthor": {
+            "type": "string"
+          },
+          "publisher": {
+            "type": "string"
+          },
+          "year": {
+            "type": "string"
+          },
+          "isbn": {
+            "type": "string"
+          },
+          "corrections": {
+            "type": "object",
+            "properties": {
+              "title": {
+                "type": "string"
+              },
+              "author": {
+                "type": "string"
+              },
+              "titleSinglish": {
+                "type": "string"
+              },
+              "authorSinglish": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "title",
+              "author",
+              "titleSinglish",
+              "authorSinglish"
+            ]
+          },
+          "sources": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "title": {
+                  "type": "string"
+                },
+                "url": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "title",
+                "url"
+              ]
+            }
+          },
+          "notes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "found",
+          "mode",
+          "description",
+          "reviewSummary",
+          "categories",
+          "translator",
+          "originalTitle",
+          "originalAuthor",
+          "publisher",
+          "year",
+          "isbn",
+          "corrections",
+          "sources",
+          "notes"
         ]
       },
       "AdminUser": {
@@ -1712,12 +1904,20 @@
                   "coverUrl": {
                     "anyOf": [
                       {
-                        "type": [
-                          "string",
-                          "null"
-                        ],
-                        "maxLength": 1000,
-                        "format": "uri"
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "maxLength": 1000,
+                            "format": "uri"
+                          },
+                          {
+                            "type": "string",
+                            "pattern": "^\\/covers\\/[0-9a-f-]{36}\\.(jpg|png|webp)$"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
                       },
                       {
                         "type": "string",
@@ -2020,6 +2220,422 @@
           },
           "404": {
             "description": "No such book",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/ai/read-cover": {
+      "post": {
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "tags": [
+          "Admin: AI & covers"
+        ],
+        "operationId": "adminReadCover",
+        "summary": "Read a cover photo with Gemini",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "imageBase64": {
+                    "type": "string",
+                    "minLength": 100,
+                    "maxLength": 3000000
+                  },
+                  "mimeType": {
+                    "type": "string",
+                    "enum": [
+                      "image/jpeg",
+                      "image/png",
+                      "image/webp"
+                    ],
+                    "default": "image/jpeg"
+                  }
+                },
+                "required": [
+                  "imageBase64"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "What the AI read",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CoverDraft"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not an admin",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "AI free quota used up",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "AI error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "AI busy",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/ai/lookup": {
+      "post": {
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "tags": [
+          "Admin: AI & covers"
+        ],
+        "operationId": "adminWebLookup",
+        "summary": "Search the web for a book and summarise it",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 300
+                  },
+                  "author": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 200
+                  },
+                  "titleSinglish": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 300
+                  },
+                  "authorSinglish": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 200
+                  },
+                  "translator": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 200
+                  },
+                  "language": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 40
+                  },
+                  "isbn": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 20
+                  },
+                  "publisher": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 200
+                  },
+                  "isTranslation": {
+                    "type": "boolean"
+                  },
+                  "answerLanguage": {
+                    "type": "string",
+                    "enum": [
+                      "Sinhala",
+                      "English",
+                      "Tamil"
+                    ],
+                    "default": "English"
+                  },
+                  "imageBase64": {
+                    "type": "string",
+                    "maxLength": 3000000,
+                    "description": "optional cover photo — helps fix spelling"
+                  }
+                },
+                "required": [
+                  "title"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "What was found (found=false if nothing reliable)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LookupResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not an admin",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "AI free quota used up",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "AI error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "AI busy",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/covers": {
+      "put": {
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "tags": [
+          "Admin: AI & covers"
+        ],
+        "operationId": "adminUploadCover",
+        "summary": "Store a (polished) cover image in R2",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "image/jpeg": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Stored",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "url": {
+                      "type": "string"
+                    },
+                    "bytes": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "url",
+                    "bytes"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not an admin",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Image larger than 2 MB",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Not a JPEG, PNG or WebP image",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "AI free quota used up",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "AI error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "AI busy",
             "content": {
               "application/problem+json": {
                 "schema": {

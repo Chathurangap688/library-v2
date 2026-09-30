@@ -181,7 +181,9 @@ export const BookInput = z.object({
   year: z.number().int().min(0).max(2100).nullable().optional(),
   description: text(5000), reviewSummary: text(3000),
   webSources: z.array(z.object({ title: z.string().max(300), url: z.url() })).max(20).nullable().optional(),
-  coverUrl: z.url().max(1000).nullable().optional().or(z.literal('')),
+  // a link (old Drive covers) or one of OUR stored covers: /covers/<uuid>.jpg (Lesson 4.4)
+  coverUrl: z.union([z.url().max(1000), z.string().regex(/^\/covers\/[0-9a-f-]{36}\.(jpg|png|webp)$/, 'Not a cover link')])
+    .nullable().optional().or(z.literal('')),
   copies: z.number().int().min(1).max(99).optional(),
   shelf: text(100),
   categories: z.array(z.string().trim().min(1).max(60)).max(12).optional(),

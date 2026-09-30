@@ -7,7 +7,8 @@
  */
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
-import type { BookDetail, BookInput } from '../api/client'
+import type { BookDetail, BookInput, CoverDraft, LookupResult } from '../api/client'
+import { CoverPanel } from '../components/CoverPanel'
 import { ApiError, useAddCopy, useBook, useCategories, useDeleteBook, useDuplicates, useLanguages, useSaveBook } from '../api/hooks'
 
 type Form = Record<string, string | boolean | string[]>
@@ -57,6 +58,36 @@ function BookForm({ book }: { book?: BookDetail }) {
   const [form, setForm] = useState<Form>(() => toForm(book))
   const [newCat, setNewCat] = useState('')
   const [fixed, setFixed] = useState<Set<string>>(new Set())      // fields edited since the last failed save
+  const [aiFilled, setAiFilled] = useState<Set<string>>(new Set())  // Lesson 4.4: fields the AI filled in
+  const [suggestion, setSuggestion] = useState<LookupResult['corrections'] | null>(null)
+  const [webSources, setWebSources] = useState<{ title: string; url: string }[] | null>(book?.webSources ?? null)
+
+  /** Lesson 4.4: put AI values into EMPTY fields only (never overwrite what the admin typed) */
+  function fillEmpty(values: Record<string, string | boolean | string[] | undefined>) {
+    const filled: string[] = []
+    setForm((f) => {
+      const next = { ...f }
+      for (const [k, v] of Object.entries(values)) {
+        if (v === undefined || v === '' || (Array.isArray(v) && !v.length)) continue
+        const cur = next[k]
+        const empty = cur === '' || cur === false || (Array.isArray(cur) && !cur.length) || (k === 'language' && !book && cur === 'Sinhala')
+        if (empty) { next[k] = v; filled.push(k) }
+      }
+      return next
+    })
+    setAiFilled((prev) => new Set([...prev, ...filled]))
+  }
+  const onDraft = (d: CoverDraft) => fillEmpty({ title: d.title, author: d.author, titleSinglish: d.titleSinglish, authorSinglish: d.authorSinglish,
+    language: d.language, isTranslation: d.isTranslation, translator: d.translator, originalTitle: d.originalTitle,
+    categories: d.categories, isbn: d.isbn, publisher: d.publisher, year: d.year })
+  const onLookup = (r: LookupResult) => {
+    if (!r.found) return
+    fillEmpty({ description: r.description, reviewSummary: r.reviewSummary, categories: r.categories, publisher: r.publisher, year: r.year,
+      isbn: r.isbn, translator: r.translator, originalTitle: r.originalTitle, originalAuthor: r.originalAuthor })
+    if (r.sources.length) setWebSources(r.sources)
+    const c = r.corrections
+    if ((c.title && c.title !== (form.title as string).trim()) || (c.author && c.author !== (form.author as string).trim())) setSuggestion(c)
+  }
   const set = (k: string, v: string | boolean | string[]) => {
     setForm((f) => ({ ...f, [k]: v }))
     setFixed((prev) => new Set(prev).add(k))                       // hide that field's old error while typing
@@ -77,7 +108,7 @@ function BookForm({ book }: { book?: BookDetail }) {
   const toggleCat = (name: string) => set('categories', cats.includes(name) ? cats.filter((c) => c !== name) : [...cats, name])
 
   const input = (k: string, label: string, props: React.InputHTMLAttributes<HTMLInputElement> = {}) => (
-    <label className={'field' + (fieldError(k) ? ' has-error' : '')}>
+    <label className={'field' + (fieldError(k) ? ' has-error' : '') + (aiFilled.has(k) && !fixed.has(k) ? ' ai-filled' : '')}>
       <span>{label}</span>
       <input value={form[k] as string} onChange={(e) => set(k, e.target.value)} {...props} />
       {fieldError(k) && <small className="bad">{fieldError(k)}</small>}
@@ -87,12 +118,32 @@ function BookForm({ book }: { book?: BookDetail }) {
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     setFixed(new Set())
-    save.mutate({ id: book?.id, input: toInput(form, Boolean(book)) }, { onSuccess: (saved) => navigate(`/books/${saved.id}`) })
+    save.mutate({ id: book?.id, input: { ...toInput(form, Boolean(book)), webSources } }, { onSuccess: (saved) => navigate(`/books/${saved.id}`) })
   }
 
   return (
     <form className="book-form" onSubmit={onSubmit} noValidate>
       <h1>{book ? `Edit: ${book.title}` : 'Add a book'}</h1>
+
+      <CoverPanel coverUrl={form.coverUrl as string} onCover={(url) => set('coverUrl', url)} onDraft={onDraft} onLookup={onLookup}
+        defaultAnswerLanguage={form.language === 'English' ? 'English' : 'Sinhala'}
+        lookupInput={() => ({ title: form.title as string, author: (form.author as string) || null, titleSinglish: (form.titleSinglish as string) || null,
+          authorSinglish: (form.authorSinglish as string) || null, translator: (form.translator as string) || null, language: (form.language as string) || null,
+          isbn: (form.isbn as string) || null, publisher: (form.publisher as string) || null, isTranslation: form.isTranslation as boolean })} />
+
+      {suggestion && (
+        <div className="warn" role="status">
+          <strong>The web suggests a different spelling:</strong>{' '}
+          {suggestion.title && <>title “{suggestion.title}”{suggestion.titleSinglish ? ` (${suggestion.titleSinglish})` : ''} </>}
+          {suggestion.author && <>author “{suggestion.author}” </>}
+          <button type="button" className="link" onClick={() => {
+            if (suggestion.title) { set('title', suggestion.title); if (suggestion.titleSinglish) set('titleSinglish', suggestion.titleSinglish) }
+            if (suggestion.author) { set('author', suggestion.author); if (suggestion.authorSinglish) set('authorSinglish', suggestion.authorSinglish) }
+            setSuggestion(null)
+          }}>Use it</button>{' · '}
+          <button type="button" className="link" onClick={() => setSuggestion(null)}>Keep mine</button>
+        </div>
+      )}
 
       {dups.data && dups.data.length > 0 && (
         <div className="warn" role="status">
@@ -123,7 +174,7 @@ function BookForm({ book }: { book?: BookDetail }) {
           {input('isbn', 'ISBN', { inputMode: 'numeric' })}
           {input('copies', 'Copies', { type: 'number', min: 1, max: 99 })}
           {input('shelf', 'Shelf / location', { placeholder: 'e.g. Rack B, shelf 2' })}
-          {input('coverUrl', 'Cover image URL', { type: 'url', placeholder: 'Photo upload comes in Lesson 4.4' })}
+          {input('coverUrl', 'Cover image URL', { placeholder: 'Set by the photo above, or paste a link' })}
         </div>
         <datalist id="langs">{languages.data?.map((l) => l.language && <option key={l.language} value={l.language} />)}<option value="English" /><option value="Tamil" /></datalist>
 
@@ -153,8 +204,9 @@ function BookForm({ book }: { book?: BookDetail }) {
 
       <fieldset>
         <legend>About</legend>
-        <label className="field"><span>Description</span><textarea rows={4} value={form.description as string} onChange={(e) => set('description', e.target.value)} /></label>
-        <label className="field"><span>What readers say</span><textarea rows={3} value={form.reviewSummary as string} onChange={(e) => set('reviewSummary', e.target.value)} /></label>
+        <label className={'field' + (aiFilled.has('description') && !fixed.has('description') ? ' ai-filled' : '')}><span>Description</span><textarea rows={4} value={form.description as string} onChange={(e) => set('description', e.target.value)} /></label>
+        <label className={'field' + (aiFilled.has('reviewSummary') && !fixed.has('reviewSummary') ? ' ai-filled' : '')}><span>What readers say</span><textarea rows={3} value={form.reviewSummary as string} onChange={(e) => set('reviewSummary', e.target.value)} /></label>
+        {webSources && webSources.length > 0 && <p className="muted small">Sources: {webSources.map((w, i) => <span key={w.url}>{i > 0 && ' · '}<a href={w.url} target="_blank" rel="noreferrer">{w.title}</a></span>)}</p>}
       </fieldset>
 
       <fieldset>

@@ -23,6 +23,18 @@
 			"remote": true
 		}
 	],
+	// Lesson 4.4: cover images (create once: npx wrangler r2 bucket create library-covers)
+	"r2_buckets": [
+		{
+			"binding": "COVERS",
+			"bucket_name": "library-covers"
+		},
+		{
+			"bucket_name": "library-covers",
+			"binding": "library_covers",
+			"remote": true
+		}
+	],
 	// Logs you can read in the Cloudflare dashboard (Workers → library → Logs)
 	"observability": {
 		"enabled": true,

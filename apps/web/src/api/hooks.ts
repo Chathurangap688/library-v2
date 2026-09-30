@@ -213,3 +213,30 @@ export function useDuplicates(q: { title?: string; author?: string; isbn?: strin
     staleTime: 10_000,
   })
 }
+
+// ---- Lesson 4.4: covers + AI ----
+export function useReadCover() {
+  return useMutation({
+    mutationFn: async (imageBase64: string) => unwrap(await api.POST('/api/admin/ai/read-cover', { body: { imageBase64, mimeType: 'image/jpeg' } })),
+  })
+}
+
+type LookupBody = { title: string; author?: string | null; titleSinglish?: string | null; authorSinglish?: string | null; translator?: string | null;
+  language?: string | null; isbn?: string | null; publisher?: string | null; isTranslation?: boolean; answerLanguage?: 'Sinhala' | 'English' | 'Tamil'; imageBase64?: string }
+export function useLookup() {
+  return useMutation({
+    mutationFn: async (body: LookupBody) => unwrap(await api.POST('/api/admin/ai/lookup', { body: { answerLanguage: 'English', ...body } })),
+  })
+}
+
+/** Raw image bytes (not JSON) → plain fetch; the session cookie goes along (same origin) */
+export function useUploadCover() {
+  return useMutation({
+    mutationFn: async (blob: Blob) => {
+      const res = await fetch('/api/admin/covers', { method: 'PUT', headers: { 'content-type': 'image/jpeg' }, body: blob })
+      const data = await res.json() as { url?: string; detail?: string }
+      if (!res.ok || !data.url) throw new Error(data.detail ?? 'Upload failed')
+      return data.url
+    },
+  })
+}

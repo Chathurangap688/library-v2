@@ -13,6 +13,12 @@ export type Bindings = {
   ASGARDEO_BASE_URL?: string      // only for tests (a fake Asgardeo on localhost)
   ADMIN_EMAILS?: string           // comma separated: always admin + active
   SESSIONS: KVNamespace           // login sessions
+  // Lesson 4.4
+  COVERS: R2Bucket                // cover images
+  GEMINI_API_KEY?: string         // secret
+  GEMINI_MODEL?: string
+  GEMINI_BACKUP_MODELS?: string
+  TAVILY_API_KEY?: string         // secret (optional: better web search)
 }
 
 // The signed-in user, as the API sees them (loaded from OUR database on every request)

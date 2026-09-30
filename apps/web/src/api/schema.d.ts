@@ -192,6 +192,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/admin/ai/read-cover": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Read a cover photo with Gemini */
+        post: operations["adminReadCover"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/ai/lookup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Search the web for a book and summarise it */
+        post: operations["adminWebLookup"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/covers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Store a (polished) cover image in R2 */
+        put: operations["adminUploadCover"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/admin/users": {
         parameters: {
             query?: never;
@@ -465,6 +516,48 @@ export interface components {
             purchaseDate?: (string | null) | "" | null;
             price?: (string | null) | "" | null;
             notes?: string | null;
+        };
+        CoverDraft: {
+            title: string;
+            author: string;
+            titleSinglish: string;
+            authorSinglish: string;
+            translator: string;
+            originalTitle: string;
+            language: string;
+            isTranslation: boolean;
+            categories: string[];
+            isbn: string;
+            publisher: string;
+            year: string;
+            confidence: number;
+            /** @description [ymin, xmin, ymax, xmax] on a 0–1000 scale */
+            coverBox: number[] | null;
+        };
+        LookupResult: {
+            found: boolean;
+            /** @enum {string} */
+            mode: "web" | "ai" | "googlebooks" | "sources" | "none";
+            description: string;
+            reviewSummary: string;
+            categories: string[];
+            translator: string;
+            originalTitle: string;
+            originalAuthor: string;
+            publisher: string;
+            year: string;
+            isbn: string;
+            corrections: {
+                title: string;
+                author: string;
+                titleSinglish: string;
+                authorSinglish: string;
+            };
+            sources: {
+                title: string;
+                url: string;
+            }[];
+            notes: string[];
         };
         AdminUser: components["schemas"]["Me"] & {
             /** Format: date-time */
@@ -1078,6 +1171,285 @@ export interface operations {
             };
             /** @description No such book */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    adminReadCover: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    imageBase64: string;
+                    /**
+                     * @default image/jpeg
+                     * @enum {string}
+                     */
+                    mimeType?: "image/jpeg" | "image/png" | "image/webp";
+                };
+            };
+        };
+        responses: {
+            /** @description What the AI read */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CoverDraft"];
+                };
+            };
+            /** @description Invalid input */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not signed in */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not an admin */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description AI free quota used up */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description AI error */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description AI busy */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    adminWebLookup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    title: string;
+                    author?: string | null;
+                    titleSinglish?: string | null;
+                    authorSinglish?: string | null;
+                    translator?: string | null;
+                    language?: string | null;
+                    isbn?: string | null;
+                    publisher?: string | null;
+                    isTranslation?: boolean;
+                    /**
+                     * @default English
+                     * @enum {string}
+                     */
+                    answerLanguage?: "Sinhala" | "English" | "Tamil";
+                    /** @description optional cover photo — helps fix spelling */
+                    imageBase64?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description What was found (found=false if nothing reliable) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LookupResult"];
+                };
+            };
+            /** @description Invalid input */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not signed in */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not an admin */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description AI free quota used up */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description AI error */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description AI busy */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    adminUploadCover: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "image/jpeg": string;
+            };
+        };
+        responses: {
+            /** @description Stored */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        url: string;
+                        bytes: number;
+                    };
+                };
+            };
+            /** @description Invalid input */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not signed in */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not an admin */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Image larger than 2 MB */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not a JPEG, PNG or WebP image */
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description AI free quota used up */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description AI error */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description AI busy */
+            503: {
                 headers: {
                     [name: string]: unknown;
                 };
