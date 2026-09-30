@@ -1,8 +1,8 @@
 /** Lesson 4.1: /my-books — my shelves as tabs (?shelf=read), reusing the same book grid */
 import { useSearchParams } from 'react-router'
-import { useBooks, useMyLoans, useShelves, type ReadingState } from '../api/hooks'
+import { useInfiniteBooks, useMyLoans, useShelves, type ReadingState } from '../api/hooks'
 import { BookCard } from '../components/BookCard'
-import { Pagination } from '../components/Pagination'
+import { LoadMore } from '../components/LoadMore'
 import { SHELF_LABELS } from '../components/shelves'
 
 type Tab = ReadingState | 'rated' | 'borrowed'
@@ -12,10 +12,11 @@ const label = (t: Tab) => (t === 'rated' ? 'My ratings' : t === 'borrowed' ? 'Bo
 export function MyBooksPage() {
   const [params, setParams] = useSearchParams()
   const shelf = (TABS.includes(params.get('shelf') as Tab) ? params.get('shelf') : 'reading') as Tab
-  const page = Number(params.get('page')) || 1
   const counts = useShelves()
   const myLoans = useMyLoans()                           // Lesson 4.5: the "Borrowed" count
-  const books = useBooks({ shelf, page, pageSize: 24, sort: shelf === 'rated' ? 'rating' : 'title' })
+  const books = useInfiniteBooks({ shelf, pageSize: 24, sort: shelf === 'rated' ? 'rating' : 'title' })
+  const items = books.data?.pages.flatMap((p) => p.items) ?? []
+  const total = books.data?.pages[0]?.total ?? 0
 
   return (
     <section>
@@ -28,9 +29,12 @@ export function MyBooksPage() {
         ))}
       </div>
       {books.isError && <p className="bad">{books.error.message}</p>}
-      {books.data && books.data.items.length === 0 && <div className="empty muted">Nothing here yet. Open a book and use “My reading”.</div>}
-      <div className="grid">{books.data?.items.map((b) => <BookCard key={b.id} book={b} />)}</div>
-      {books.data && <Pagination page={books.data.page} pages={books.data.pages} onChange={(p) => setParams({ shelf, page: String(p) })} />}
+      {books.data && !books.isPlaceholderData && total === 0 && <div className="empty muted">Nothing here yet. Open a book and use “My reading”.</div>}
+      <div className={'grid' + (books.isPlaceholderData ? ' is-fetching' : '')}>{items.map((b) => <BookCard key={b.id} book={b} />)}</div>
+      {books.data && !books.isPlaceholderData && (
+        <LoadMore hasMore={books.hasNextPage} loading={books.isFetchingNextPage} shown={items.length} total={total}
+          onMore={() => books.fetchNextPage({ cancelRefetch: false })} />
+      )}
     </section>
   )
 }

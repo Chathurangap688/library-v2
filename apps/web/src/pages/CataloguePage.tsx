@@ -1,12 +1,13 @@
 /**
- * Lesson 2.3: the catalogue. All filters live in the URL (?q=madol&category=War&page=2),
+ * Lesson 2.3: the catalogue. All filters live in the URL (?q=madol&category=War),
  * so a search can be bookmarked, shared, and survives a page reload or the Back button.
+ * Infinite scroll: more books load as you reach the bottom (no page number in the URL any more).
  */
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router'
-import { useBooks, useCategories, useLanguages, type BookFilters } from '../api/hooks'
+import { useCategories, useInfiniteBooks, useLanguages, type BookFilters } from '../api/hooks'
 import { BookCard } from '../components/BookCard'
-import { Pagination } from '../components/Pagination'
+import { LoadMore } from '../components/LoadMore'
 import { RecommendedRow } from '../components/RecommendedRow'
 
 const SORTS = [
@@ -19,7 +20,7 @@ export function CataloguePage() {
   const [params, setParams] = useSearchParams()
 
   // Read the filters from the URL
-  const filters: BookFilters = {
+  const filters: Omit<BookFilters, 'page'> = {
     q: params.get('q') || undefined,
     language: params.get('language') || undefined,
     category: params.getAll('category'),
@@ -27,18 +28,17 @@ export function CataloguePage() {
     available: params.get('available') === 'true' ? 'true' : undefined,
     hideRead: params.get('hideRead') === 'true' ? 'true' : undefined,     // Lesson 4.1
     sort: (params.get('sort') as BookFilters['sort']) || 'title',
-    page: Number(params.get('page')) || 1,
     pageSize: 24,
   }
   const picked = filters.category as string[]
 
-  /** Change one filter in the URL; any filter change starts again at page 1 */
-  function update(key: string, value: string | string[] | undefined, keepPage = false) {
+  /** Change one filter in the URL (a new filter = a new list, starting from the top) */
+  function update(key: string, value: string | string[] | undefined) {
     setParams((prev) => {
       const next = new URLSearchParams(prev)
       next.delete(key)
       for (const v of Array.isArray(value) ? value : value ? [value] : []) next.append(key, v)
-      if (!keepPage) next.delete('page')
+      next.delete('page')                     // old bookmarks from the Previous/Next days
       return next
     }, { replace: key === 'q' })              // typing should not fill the Back-button history
   }
@@ -52,14 +52,16 @@ export function CataloguePage() {
     return () => clearTimeout(t)
   })
 
-  const books = useBooks(filters)
+  const books = useInfiniteBooks(filters)
+  const items = books.data?.pages.flatMap((p) => p.items) ?? []
+  const total = books.data?.pages[0]?.total ?? 0
   const categories = useCategories()
   const languages = useLanguages()
 
   const toggleCategory = (name: string) =>
     update('category', picked.includes(name) ? picked.filter((c) => c !== name) : [...picked, name])
 
-  const anyFilter = params.toString() !== '' && !(params.size === 1 && params.has('page'))
+  const anyFilter = [...params.keys()].some((k) => k !== 'page')
 
   return (
     <>
@@ -108,23 +110,24 @@ export function CataloguePage() {
 
       <p className="muted count" aria-live="polite">
         {books.isPending ? 'Loading books…'
-          : books.isError ? '' : `${books.data.total} book${books.data.total === 1 ? '' : 's'}`}
-        {books.isFetching && !books.isPending ? ' · updating…' : ''}
+          : books.isError ? '' : `${total} book${total === 1 ? '' : 's'}`}
+        {books.isFetching && !books.isPending && !books.isFetchingNextPage ? ' · updating…' : ''}
       </p>
 
       {books.isError && <p className="bad">Could not load books: {books.error.message}</p>}
 
-      {books.data && books.data.items.length === 0 && (
+      {books.data && total === 0 && (
         <div className="empty">No books match. <button type="button" className="link" onClick={() => { setText(''); setParams({}) }}>Clear the filters</button></div>
       )}
 
-      <div className={'grid' + (books.isFetching ? ' is-fetching' : '')}>
-        {books.data?.items.map((b) => <BookCard key={b.id} book={b} />)}
+      {/* dim only while a NEW filter loads — not while the next page is being appended */}
+      <div className={'grid' + (books.isPlaceholderData ? ' is-fetching' : '')}>
+        {items.map((b) => <BookCard key={b.id} book={b} />)}
       </div>
 
-      {books.data && (
-        <Pagination page={books.data.page} pages={books.data.pages}
-          onChange={(p) => { update('page', p === 1 ? undefined : String(p), true); window.scrollTo({ top: 0 }) }} />
+      {books.data && !books.isPlaceholderData && (
+        <LoadMore hasMore={books.hasNextPage} loading={books.isFetchingNextPage} shown={items.length} total={total}
+          onMore={() => books.fetchNextPage({ cancelRefetch: false })} />
       )}
     </>
   )

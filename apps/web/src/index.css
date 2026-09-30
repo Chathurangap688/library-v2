@@ -62,9 +62,10 @@ button.link { background: none; border: 0; color: var(--brand); cursor: pointer;
 .book-body p { margin: 0; }
 .book-author { font-size: .9rem; }
 .stars { color: var(--star); letter-spacing: 1px; font-size: .9rem; }
-.pagination { display: flex; justify-content: center; align-items: center; gap: 16px; margin-top: 24px; }
-.pagination button { padding: 8px 14px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); cursor: pointer; }
-.pagination button:disabled { opacity: .4; cursor: default; }
+/* infinite scroll: the sentinel under the grid, with a fallback button */
+.load-more { display: flex; flex-direction: column; align-items: center; gap: 6px; margin: 24px 0 8px; min-height: 48px; }
+.load-more button { padding: 8px 14px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); cursor: pointer; }
+.load-more button:disabled { opacity: .6; cursor: default; }
 
 /* one book */
 .back { margin-bottom: 12px; }

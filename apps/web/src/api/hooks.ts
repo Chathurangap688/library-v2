@@ -3,7 +3,7 @@
  * going back to a page you saw a moment ago shows it instantly, no new request.
  * The "queryKey" is the cache label — same key = same cached answer.
  */
-import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { keepPreviousData, useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api, type BookInput } from './client'
 import type { paths } from './schema'
 
@@ -15,11 +15,19 @@ function unwrap<T>(res: { data?: T; error?: { detail?: string; title?: string } 
   return res.data
 }
 
-export function useBooks(filters: BookFilters) {
-  return useQuery({
-    queryKey: ['books', filters],
-    queryFn: async () => unwrap(await api.GET('/api/books', { params: { query: filters } })),
-    placeholderData: keepPreviousData,     // keep showing the old page while the next one loads
+/**
+ * Infinite scroll: the same /api/books endpoint, asked page by page.
+ * TanStack keeps every page it has loaded under ONE cache key (data.pages = [page1, page2, …]),
+ * so coming Back to the list shows everything you had scrolled through, instantly.
+ * getNextPageParam says which page to ask for next — undefined means "that was the last one".
+ */
+export function useInfiniteBooks(filters: Omit<BookFilters, 'page'>) {
+  return useInfiniteQuery({
+    queryKey: ['books', 'infinite', filters],
+    initialPageParam: 1,
+    queryFn: async ({ pageParam }) => unwrap(await api.GET('/api/books', { params: { query: { ...filters, page: pageParam } } })),
+    getNextPageParam: (last) => (last.page < last.pages ? last.page + 1 : undefined),
+    placeholderData: keepPreviousData,     // a new filter keeps the old grid on screen until the answer arrives
   })
 }
 
@@ -126,6 +134,9 @@ export function useSetStatus() {
 export function useSetRating() {
   const after = useAfterReadingChange()
   return useMutation({
+    // Clicking 3★ then quickly 5★ sends two PUTs. Without a scope they could arrive in any order
+    // and 3★ might win. Mutations with the same scope id run one after another, in click order.
+    scope: { id: 'rating' },
     mutationFn: async ({ id, rating, review }: { id: string; rating: number; review: string | null }) =>
       unwrap(await api.PUT('/api/books/{id}/rating', { params: { path: { id } }, body: { rating, review } })),
     onSuccess: after,
