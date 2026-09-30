@@ -78,7 +78,8 @@ export function buildApp(makeDb: (env: Bindings) => Db) {
     let res = await fetch(origin + url.pathname + url.search, { headers: { Accept: accept } })
     // React routes (/books/42) are unknown to GitHub Pages → give it index.html
     if (res.status === 404 && accept.includes('text/html')) res = await fetch(origin + '/index.html')
-    return new Response(res.body, { status: res.status, headers: res.headers })
+    // Copy the headers: the fetched ones are read-only, and secureHeaders() still adds its own
+    return new Response(res.body, { status: res.status, headers: new Headers(res.headers) })
   })
 
   // Unexpected errors → Problem Details; the real error goes to the logs only

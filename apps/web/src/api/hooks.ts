@@ -1,0 +1,47 @@
+/**
+ * Lesson 2.3: data hooks. TanStack Query fetches, CACHES and re-uses API answers:
+ * going back to a page you saw a moment ago shows it instantly, no new request.
+ * The "queryKey" is the cache label — same key = same cached answer.
+ */
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
+import { api } from './client'
+import type { paths } from './schema'
+
+export type BookFilters = NonNullable<paths['/api/books']['get']['parameters']['query']>
+
+/** Turn an openapi-fetch answer into data, or throw the Problem Details message */
+function unwrap<T>(res: { data?: T; error?: { detail?: string; title?: string } }): T {
+  if (res.error || res.data === undefined) throw new Error(res.error?.detail ?? res.error?.title ?? 'Request failed')
+  return res.data
+}
+
+export function useBooks(filters: BookFilters) {
+  return useQuery({
+    queryKey: ['books', filters],
+    queryFn: async () => unwrap(await api.GET('/api/books', { params: { query: filters } })),
+    placeholderData: keepPreviousData,     // keep showing the old page while the next one loads
+  })
+}
+
+export function useBook(id: string) {
+  return useQuery({
+    queryKey: ['book', id],
+    queryFn: async () => unwrap(await api.GET('/api/books/{id}', { params: { path: { id } } })),
+  })
+}
+
+export function useCategories() {
+  return useQuery({
+    queryKey: ['categories'],
+    queryFn: async () => unwrap(await api.GET('/api/categories')),
+    staleTime: 10 * 60_000,                // categories rarely change: re-use for 10 minutes
+  })
+}
+
+export function useLanguages() {
+  return useQuery({
+    queryKey: ['languages'],
+    queryFn: async () => unwrap(await api.GET('/api/languages')),
+    staleTime: 10 * 60_000,
+  })
+}

@@ -11,9 +11,11 @@
     "api:types": "npx -y openapi-typescript@7.13.0 ../api/openapi.json -o src/api/schema.d.ts"
   },
   "dependencies": {
+    "@tanstack/react-query": "^5.104.0",
     "openapi-fetch": "^0.17.0",
     "react": "^19.2.8",
-    "react-dom": "^19.2.8"
+    "react-dom": "^19.2.8",
+    "react-router": "^8.4.0"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
