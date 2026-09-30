@@ -154,3 +154,32 @@ form.inline { display: inline; }
   padding-bottom: 8px; scroll-snap-type: x mandatory; }
 .rec { scroll-snap-align: start; display: grid; gap: 4px; align-content: start; }
 .rec-reason { margin: 0; font-size: .8rem; color: var(--muted); line-height: 1.3; }
+
+/* Lesson 4.3: book form */
+.book-form { max-width: 900px; display: grid; gap: 16px; }
+.book-form fieldset { border: 1px solid var(--line); border-radius: 12px; padding: 12px 16px 16px; background: var(--surface); margin: 0; }
+.book-form legend { font-weight: 700; padding: 0 6px; }
+.form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px 16px; }
+.field { display: grid; gap: 4px; margin-top: 8px; }
+.field > span { font-size: .85rem; color: var(--muted); }
+.field input, .field textarea, .row input { padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); width: 100%; }
+.field.has-error input { border-color: var(--bad); }
+.chips.pick .chip { border: 1px solid var(--line); cursor: pointer; background: var(--bg); color: inherit; }
+.chips.pick .chip.on { background: var(--brand); color: #fff; border-color: var(--brand); }
+.row { display: flex; gap: 8px; max-width: 420px; }
+.warn { border: 1px solid #e8a33d; background: #e8a33d1a; border-radius: 10px; padding: 10px 14px; }
+.warn ul { margin: 6px 0 0; padding-left: 18px; }
+.form-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.spacer { flex: 1; }
+.page-actions { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.page-actions .back { margin: 0; }
+a.btn-small { text-decoration: none; color: inherit; }
+
+/* Lesson 4.3: header with more links */
+.topbar nav a { white-space: nowrap; }
+.user-name { max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 900px) { .user-name { display: none; } }
+@media (max-width: 900px) {
+  .topbar { flex-wrap: wrap; row-gap: 6px; padding: 10px 16px 6px; }
+  .topbar nav { order: 3; width: 100%; overflow-x: auto; gap: 18px; padding-bottom: 4px; }
+}

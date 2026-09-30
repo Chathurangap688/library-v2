@@ -4,7 +4,7 @@
  * The "queryKey" is the cache label — same key = same cached answer.
  */
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { api } from './client'
+import { api, type BookInput } from './client'
 import type { paths } from './schema'
 
 export type BookFilters = NonNullable<paths['/api/books']['get']['parameters']['query']>
@@ -23,9 +23,10 @@ export function useBooks(filters: BookFilters) {
   })
 }
 
-export function useBook(id: string) {
+export function useBook(id: string, enabled = true) {
   return useQuery({
     queryKey: ['book', id],
+    enabled,
     queryFn: async () => unwrap(await api.GET('/api/books/{id}', { params: { path: { id } } })),
   })
 }
@@ -145,5 +146,70 @@ export function useRecommendations(limit = 8) {
     queryKey: ['books', 'recommendations', limit],     // starts with 'books' → refreshed after my changes
     queryFn: async () => unwrap(await api.GET('/api/me/recommendations', { params: { query: { limit } } })),
     staleTime: 5 * 60_000,
+  })
+}
+
+// ---- Lesson 4.3: admin — add / edit / remove books ----
+
+/** A save can fail with field errors (400) or a duplicate (409): keep all of it for the form */
+export class ApiError extends Error {
+  status: number; errors: { field: string; message: string }[]; code?: string; duplicates?: { id: string; title: string }[]
+  constructor(res: { response: Response; error?: unknown }) {
+    const e = (res.error ?? {}) as { detail?: string; errors?: { field: string; message: string }[]; code?: string; duplicates?: { id: string; title: string }[] }
+    super(e.detail ?? 'Request failed')
+    this.status = res.response.status; this.errors = e.errors ?? []; this.code = e.code; this.duplicates = e.duplicates
+  }
+}
+
+function useAfterBookChange() {
+  const qc = useQueryClient()
+  return (id?: string) => {
+    qc.invalidateQueries({ queryKey: ['books'] })
+    qc.invalidateQueries({ queryKey: ['categories'] })
+    qc.invalidateQueries({ queryKey: ['languages'] })
+    if (id) qc.invalidateQueries({ queryKey: ['book', id] })
+  }
+}
+
+export function useSaveBook() {
+  const after = useAfterBookChange()
+  return useMutation({
+    mutationFn: async ({ id, input }: { id?: string; input: BookInput }) => {
+      const res = id
+        ? await api.PATCH('/api/admin/books/{id}', { params: { path: { id } }, body: input })
+        : await api.POST('/api/admin/books', { body: input })
+      if (!res.data) throw new ApiError(res)
+      return res.data
+    },
+    onSuccess: (book) => after(book.id),
+  })
+}
+
+export function useAddCopy() {
+  const after = useAfterBookChange()
+  return useMutation({
+    mutationFn: async (id: string) => unwrap(await api.POST('/api/admin/books/{id}/copies', { params: { path: { id } } })),
+    onSuccess: (book) => after(book.id),
+  })
+}
+
+export function useDeleteBook() {
+  const after = useAfterBookChange()
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const res = await api.DELETE('/api/admin/books/{id}', { params: { path: { id } } })
+      if (res.error) throw new ApiError(res)
+    },
+    onSuccess: () => after(),
+  })
+}
+
+export function useDuplicates(q: { title?: string; author?: string; isbn?: string; excludeId?: string }) {
+  const enabled = Boolean((q.title && q.title.trim().length >= 2) || (q.isbn && q.isbn.replace(/\D/g, '').length >= 10))
+  return useQuery({
+    queryKey: ['duplicates', q],
+    queryFn: async () => unwrap(await api.GET('/api/admin/books/duplicates', { params: { query: q } })),
+    enabled,
+    staleTime: 10_000,
   })
 }

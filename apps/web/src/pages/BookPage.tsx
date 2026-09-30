@@ -22,7 +22,11 @@ export function BookPage() {
   return (
     <article className="book-page">
       {/* Back = the previous page (keeps your search), or the catalogue if opened directly */}
-      <button type="button" className="link back" onClick={() => (history.length > 1 ? navigate(-1) : navigate('/'))}>← Back</button>
+      <div className="page-actions">
+        <button type="button" className="link back" onClick={() => (history.length > 1 ? navigate(-1) : navigate('/'))}>← Back</button>
+        {/* Lesson 4.3: only admins get the private fields — so their presence means "admin" */}
+        {'price' in book && <Link className="btn-small" to={`/books/${book.id}/edit`}>✎ Edit book</Link>}
+      </div>
 
       <div className="book-page-grid">
         <Cover url={book.coverUrl} title={book.title} large />

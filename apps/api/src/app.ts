@@ -26,6 +26,7 @@ import { authRoutes } from './routes/auth'
 import { meRoutes } from './routes/me'
 import { adminRoutes } from './routes/admin'
 import { readingRoutes } from './routes/reading'
+import { adminBookRoutes } from './routes/adminBooks'
 import { loadUser, requireActive, requireAdmin } from './auth/guards'
 import { cookieName } from './auth/session'
 
@@ -87,6 +88,7 @@ export function buildApp(makeDb: (env: Bindings) => Db) {
   app.route('/api/books', bookRoutes)
   app.route('/api', metaRoutes)
   app.route('/api', meRoutes)
+  app.route('/api/admin/books', adminBookRoutes)   // Lesson 4.3 (before /api/admin so /books is matched here)
   app.route('/api/admin', adminRoutes)
   app.route('/api', readingRoutes)
   app.route('/auth', authRoutes)

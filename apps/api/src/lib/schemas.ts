@@ -168,3 +168,37 @@ export const Recommendation = z.object({
   score: z.number().openapi({ description: '0–1, higher = better match' }),
   reason: z.string().openapi({ example: 'Because you liked other books by Martin Wickramasinghe' }),
 }).openapi('Recommendation')
+
+// ---- admin: books (Lesson 4.3) ----
+const text = (max: number) => z.string().trim().max(max).nullable().optional()
+export const BookInput = z.object({
+  title: z.string().trim().min(1, 'Title is required').max(300),
+  titleSinglish: text(300), author: text(200), authorSinglish: text(200),
+  language: text(40), isTranslation: z.boolean().optional(),
+  translator: text(200), originalTitle: text(300), originalAuthor: text(200),
+  isbn: z.string().trim().max(20).regex(/^[0-9Xx -]*$/, 'ISBN: digits (and X) only').nullable().optional(),
+  publisher: text(200),
+  year: z.number().int().min(0).max(2100).nullable().optional(),
+  description: text(5000), reviewSummary: text(3000),
+  webSources: z.array(z.object({ title: z.string().max(300), url: z.url() })).max(20).nullable().optional(),
+  coverUrl: z.url().max(1000).nullable().optional().or(z.literal('')),
+  copies: z.number().int().min(1).max(99).optional(),
+  shelf: text(100),
+  categories: z.array(z.string().trim().min(1).max(60)).max(12).optional(),
+  // private (admin) fields
+  purchasedFrom: text(200),
+  purchaseDate: z.iso.date().nullable().optional().or(z.literal('')),
+  price: z.string().trim().regex(/^\d{0,8}(\.\d{1,2})?$/, 'Price: a number like 950 or 950.00').nullable().optional().or(z.literal('')),
+  notes: text(2000),
+}).openapi('BookInput')
+
+export const DuplicateQuery = z.object({
+  title: z.string().trim().max(300).optional(),
+  author: z.string().trim().max(200).optional(),
+  isbn: z.string().trim().max(20).optional(),
+  excludeId: z.uuid().optional(),
+})
+export const Duplicate = z.object({
+  id: z.uuid(), title: z.string(), author: z.string().nullable(), copies: z.number().int(),
+  match: z.enum(['isbn', 'title']),
+}).openapi('Duplicate')
