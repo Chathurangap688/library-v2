@@ -11,6 +11,7 @@ import { and, asc, desc, eq, sql, type SQL } from 'drizzle-orm'
 import type { AppEnv } from '../types'
 import { books, ratings, users } from '../db/schema'
 import { problem } from '../lib/problem'
+import { daysOut, loanDays } from '../lib/loans'
 import { validationHook } from '../lib/validate'
 import { bookColumnsFor, bookExtras, searchLatin, searchText, singlishKey, singlishKeySql } from '../lib/books'
 import { BookDetail, BookIdParam, BookPage, ListBooksQuery, problemResponse } from '../lib/schemas'
@@ -52,7 +53,8 @@ bookRoutes.openapi(listBooks, async (c) => {
       where bc.book_id = books.id and c.name in (${sql.join(categoryNames.map((n) => sql`${n}`), sql`, `)}))`)
   }
   // Lesson 4.1: my shelves
-  if (f.shelf === 'rated') where.push(sql`exists (select 1 from ratings r where r.book_id = books.id and r.user_id = ${me.id})`)
+  if (f.shelf === 'borrowed') where.push(sql`exists (select 1 from loans l where l.book_id = books.id and l.user_id = ${me.id} and l.returned_at is null)`)
+  else if (f.shelf === 'rated') where.push(sql`exists (select 1 from ratings r where r.book_id = books.id and r.user_id = ${me.id})`)
   else if (f.shelf) where.push(sql`exists (select 1 from reading_status rs where rs.book_id = books.id and rs.user_id = ${me.id} and rs.status = ${f.shelf})`)
   if (f.hideRead === 'true') where.push(sql`not exists (select 1 from reading_status rs where rs.book_id = books.id and rs.user_id = ${me.id} and rs.status = 'read')`)
   const condition = where.length ? and(...where) : undefined
@@ -98,5 +100,13 @@ bookRoutes.openapi(getBook, async (c) => {
     .from(ratings).innerJoin(users, eq(users.id, ratings.userId))
     .where(eq(ratings.bookId, id)).orderBy(desc(ratings.updatedAt))
 
-  return c.json({ ...book, ratings: bookRatings }, 200)
+  // Lesson 4.5: admins also see who has the copies now
+  const openLoans = me.role !== 'admin' ? undefined : (await db.execute(sql`
+    select l.id, l.user_id as "userId", u.name, u.email, l.borrowed_at as "borrowedAt",
+      ${daysOut} as days, ${daysOut} > ${loanDays(c.env)} as overdue
+    from loans l join users u on u.id = l.user_id
+    where l.book_id = ${id} and l.returned_at is null order by l.borrowed_at`) as unknown as { rows: { borrowedAt: string | Date }[] }).rows
+    .map((r) => ({ ...r, borrowedAt: new Date(r.borrowedAt).toISOString() }))
+
+  return c.json({ ...book, ratings: bookRatings, ...(openLoans ? { openLoans } : {}) } as never, 200)
 })

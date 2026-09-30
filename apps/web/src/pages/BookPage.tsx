@@ -4,6 +4,7 @@ import { useBook } from '../api/hooks'
 import { Cover } from '../components/Cover'
 import { Stars } from '../components/Stars'
 import { MyReading } from '../components/MyReading'
+import { LendingBox, MyLoanNote } from '../components/LendingBox'
 
 export function BookPage() {
   const { id = '' } = useParams()
@@ -37,6 +38,7 @@ export function BookPage() {
           <p className={book.available > 0 ? 'good' : 'bad'}>
             {book.available > 0 ? `✓ Available (${book.available} of ${book.copies})` : '✗ All copies are on loan'}
           </p>
+          <MyLoanNote book={book} />
           <div className="chips">
             {book.categories.map((c) => <Link key={c} className="chip" to={`/?category=${encodeURIComponent(c)}`}>{c}</Link>)}
             {book.isTranslation && <span className="chip chip-tr">Translation</span>}
@@ -51,6 +53,9 @@ export function BookPage() {
 
       {/* key: start the form fresh when a DIFFERENT book is shown (not after my own save) */}
       <MyReading key={book.id} book={book} />
+
+      {/* Lesson 4.5: only admins receive openLoans */}
+      {book.openLoans && <LendingBox book={book} />}
 
       {/* Lesson 3.3: the API only sends these fields to admins */}
       {'price' in book && (

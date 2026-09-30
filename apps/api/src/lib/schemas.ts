@@ -62,6 +62,7 @@ export const Book = z.object({
   myStatus: z.enum(['to_read', 'reading', 'read']).nullable(),
   myRating: z.number().int().min(1).max(5).nullable(),
   myReview: z.string().nullable(),
+  myLoanSince: z.string().nullable().openapi({ description: 'I have borrowed this book since… (null = not with me)' }),
   // Lesson 3.3: only in answers to ADMINS (the server leaves them out for everyone else)
   purchasedFrom: z.string().nullable().optional().openapi({ description: 'admins only' }),
   purchaseDate: z.string().nullable().optional().openapi({ description: 'admins only', format: 'date' }),
@@ -77,7 +78,14 @@ export const PublicRating = z.object({
   updatedAt: z.string().openapi({ format: 'date-time' }),
 }).openapi('PublicRating')
 
-export const BookDetail = Book.extend({ ratings: z.array(PublicRating) }).openapi('BookDetail')
+export const OpenLoan = z.object({
+  id: z.uuid(), userId: z.uuid(), name: z.string().nullable(), email: z.string(),
+  borrowedAt: z.string().openapi({ format: 'date-time' }), days: z.number().int(), overdue: z.boolean(),
+}).openapi('OpenLoan')
+export const BookDetail = Book.extend({
+  ratings: z.array(PublicRating),
+  openLoans: z.array(OpenLoan).optional().openapi({ description: 'admins only: who has the copies now' }),
+}).openapi('BookDetail')
 
 export const BookPage = z.object({
   items: z.array(Book),
@@ -96,7 +104,7 @@ export const ListBooksQuery = z.object({
   translations: yesNo.openapi({ description: 'true = only translated books' }),
   available: yesNo.openapi({ description: 'true = only books with a free copy' }),
   // Lesson 4.1: "my shelves"
-  shelf: z.enum(['to_read', 'reading', 'read', 'rated']).optional()
+  shelf: z.enum(['to_read', 'reading', 'read', 'rated', 'borrowed']).optional()
     .openapi({ description: 'Only books on MY shelf (or that I rated)' }),
   hideRead: yesNo.openapi({ description: 'true = leave out books I have read' }),
   sort: z.enum(['title', 'newest', 'rating']).default('title'),
@@ -204,3 +212,14 @@ export const Duplicate = z.object({
   id: z.uuid(), title: z.string(), author: z.string().nullable(), copies: z.number().int(),
   match: z.enum(['isbn', 'title']),
 }).openapi('Duplicate')
+
+// ---- lending (Lesson 4.5) ----
+export const LoanRow = z.object({
+  id: z.uuid(), bookId: z.uuid(), title: z.string(), titleSinglish: z.string().nullable(), coverUrl: z.string().nullable(),
+  userId: z.uuid(), name: z.string().nullable(), email: z.string(),
+  borrowedAt: z.string().openapi({ format: 'date-time' }), returnedAt: z.string().nullable(),
+  lentByName: z.string().nullable(), days: z.number().int(), overdue: z.boolean(),
+}).openapi('LoanRow')
+export const LendBody = z.object({ bookId: z.uuid(), userId: z.uuid() }).openapi('LendBody')
+export const LoanIdParam = z.object({ id: z.uuid().openapi({ param: { name: 'id', in: 'path' } }) })
+export const LoanSummary = z.object({ open: z.number().int(), overdue: z.number().int(), loanDays: z.number().int() }).openapi('LoanSummary')

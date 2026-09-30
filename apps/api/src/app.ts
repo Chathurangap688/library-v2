@@ -29,6 +29,7 @@ import { readingRoutes } from './routes/reading'
 import { adminBookRoutes } from './routes/adminBooks'
 import { adminAiRoutes } from './routes/adminAi'
 import { coverRoutes } from './routes/covers'
+import { adminLoanRoutes, myLoanRoutes } from './routes/loans'
 import { loadUser, requireActive, requireAdmin } from './auth/guards'
 import { cookieName } from './auth/session'
 
@@ -68,6 +69,7 @@ export function buildApp(makeDb: (env: Bindings) => Db) {
   app.use('/api/languages', requireActive)
   app.use('/api/me/shelves', requireActive)     // Lesson 4.1 (/api/books/* is already covered)
   app.use('/api/me/recommendations', requireActive)   // Lesson 4.2
+  app.use('/api/me/loans', requireActive)             // Lesson 4.5
   // Lesson 3.3: everything under /api/admin is for admins only
   app.use('/api/admin/*', requireAdmin)
   app.use('/covers/*', requireActive)            // Lesson 4.4: covers are private too
@@ -91,6 +93,8 @@ export function buildApp(makeDb: (env: Bindings) => Db) {
   app.route('/api/books', bookRoutes)
   app.route('/api', metaRoutes)
   app.route('/api', meRoutes)
+  app.route('/api/admin/loans', adminLoanRoutes)   // Lesson 4.5
+  app.route('/api', myLoanRoutes)
   app.route('/api/admin/books', adminBookRoutes)   // Lesson 4.3 (before /api/admin so /books is matched here)
   app.route('/api/admin', adminAiRoutes)          // Lesson 4.4: /ai/read-cover, /ai/lookup, /covers
   app.route('/api/admin', adminRoutes)

@@ -4,7 +4,7 @@
  *   not signed in → LoginPage     pending → PendingPage     active → the library
  */
 import { Link, NavLink, Route, Routes } from 'react-router'
-import { useAdminUsers, useMe } from './api/hooks'
+import { useAdminUsers, useLoanSummary, useMe } from './api/hooks'
 import { SignOutButton } from './components/SignOutButton'
 import { CataloguePage } from './pages/CataloguePage'
 import { BookPage } from './pages/BookPage'
@@ -14,6 +14,7 @@ import { PendingPage } from './pages/PendingPage'
 import { AdminUsersPage } from './pages/AdminUsersPage'
 import { MyBooksPage } from './pages/MyBooksPage'
 import { BookFormPage } from './pages/BookFormPage'
+import { LoansPage } from './pages/LoansPage'
 
 export default function App() {
   const me = useMe()
@@ -21,6 +22,7 @@ export default function App() {
   // Lesson 3.3: admins see how many people are waiting (the query only runs for admins)
   const adminUsers = useAdminUsers(isAdmin)
   const waiting = adminUsers.data?.filter((u) => u.status === 'pending').length ?? 0
+  const loanSummary = useLoanSummary(isAdmin)                          // Lesson 4.5
 
   if (me.isPending) return <div className="gate"><p className="muted">Loading…</p></div>
   if (me.isError) return <div className="gate"><p className="bad">Could not reach the library: {me.error.message}</p><button type="button" onClick={() => me.refetch()}>Try again</button></div>
@@ -36,6 +38,7 @@ export default function App() {
           <NavLink to="/" end>Catalogue</NavLink>
           <NavLink to="/my-books">My books</NavLink>
           {isAdmin && <NavLink to="/admin/books/new">+ Add book</NavLink>}
+          {isAdmin && <NavLink to="/admin/loans">Loans{loanSummary.data && loanSummary.data.open > 0 && <span className={'count-badge' + (loanSummary.data.overdue ? ' is-late' : '')} title={`${loanSummary.data.overdue} overdue`}>{loanSummary.data.open}</span>}</NavLink>}
           {isAdmin && <NavLink to="/admin/users">Users{waiting > 0 && <span className="count-badge" aria-label={`${waiting} waiting`}>{waiting}</span>}</NavLink>}
           <NavLink to="/status">Status</NavLink>
         </nav>
@@ -54,6 +57,7 @@ export default function App() {
           <Route path="/admin/books/new" element={isAdmin ? <BookFormPage /> : <AdminsOnly />} />
           <Route path="/books/:id/edit" element={isAdmin ? <BookFormPage /> : <AdminsOnly />} />
           <Route path="/status" element={<StatusPage />} />
+          <Route path="/admin/loans" element={isAdmin ? <LoansPage /> : <AdminsOnly />} />
           <Route path="/admin/users" element={isAdmin ? <AdminUsersPage me={user} /> : <AdminsOnly />} />
           <Route path="*" element={<div className="empty"><h1>Page not found</h1><Link to="/">← Catalogue</Link></div>} />
         </Routes>

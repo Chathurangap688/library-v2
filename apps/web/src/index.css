@@ -194,3 +194,16 @@ a.btn-small { text-decoration: none; color: inherit; }
 .warn-text { color: #b7791f; }
 .field.ai-filled input, .field.ai-filled textarea { background: #7cc4b31f; border-color: var(--brand); }
 @media (max-width: 600px) { .cover-panel-grid { grid-template-columns: 1fr; } .cover-slot { width: 140px; } }
+
+/* Lesson 4.5: lending */
+.badge-mine { top: 8px; background: var(--brand); color: #fff; }
+.count-badge.is-late { background: var(--bad); color: #fff; }
+.loan-list { list-style: none; padding: 0; display: grid; gap: 6px; }
+.loan-list li { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; padding: 6px 10px; border: 1px solid var(--line); border-radius: 8px; }
+.loan-list li.is-overdue, .loan-rows li.is-overdue { border-color: var(--bad); }
+.loan-rows { list-style: none; padding: 0; display: grid; gap: 8px; }
+.loan-rows li { display: flex; align-items: center; gap: 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 8px 12px; flex-wrap: wrap; }
+.loan-cover { width: 44px; flex: none; } .loan-cover .cover { border-radius: 4px; } .loan-cover .cover-empty { font-size: 1.2rem; }
+.loan-info { display: grid; flex: 1 1 220px; } .loan-info a { color: inherit; text-decoration: none; }
+.badge-inline { font-size: .75rem; padding: 2px 8px; border-radius: 99px; border: 1px solid currentColor; }
+.admin-box select { height: 36px; padding: 0 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); }

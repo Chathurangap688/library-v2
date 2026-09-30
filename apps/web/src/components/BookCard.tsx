@@ -10,7 +10,7 @@ export function BookCard({ book }: { book: Book }) {
     <Link to={`/books/${book.id}`} className={'book-card' + (out ? ' is-out' : '')}>
       <div className="book-cover-wrap">
         <Cover url={book.coverUrl} title={book.title} />
-        {out && <span className="badge badge-out">On loan</span>}
+        {book.myLoanSince ? <span className="badge badge-mine">With you</span> : out && <span className="badge badge-out">On loan</span>}
         {book.isTranslation && <span className="badge badge-tr">Translation</span>}
         {book.myStatus && <span className={`badge badge-me badge-${book.myStatus}`}>{book.myStatus === 'read' ? '✓ ' : ''}{SHELF_LABELS[book.myStatus]}</span>}
       </div>

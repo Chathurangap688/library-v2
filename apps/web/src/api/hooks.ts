@@ -240,3 +240,37 @@ export function useUploadCover() {
     },
   })
 }
+
+// ---- Lesson 4.5: lending ----
+export function useLoanSummary(enabled: boolean) {
+  return useQuery({ queryKey: ['loans', 'summary'], enabled, queryFn: async () => unwrap(await api.GET('/api/admin/loans/summary')) })
+}
+export function useAdminLoans(status: 'open' | 'overdue' | 'returned') {
+  return useQuery({ queryKey: ['loans', 'list', status], queryFn: async () => unwrap(await api.GET('/api/admin/loans', { params: { query: { status } } })) })
+}
+export function useMyLoans() {
+  return useQuery({ queryKey: ['loans', 'mine'], queryFn: async () => unwrap(await api.GET('/api/me/loans')) })
+}
+function useAfterLoanChange() {
+  const qc = useQueryClient()
+  return (bookId: string) => {
+    qc.invalidateQueries({ queryKey: ['loans'] })
+    qc.invalidateQueries({ queryKey: ['books'] })
+    qc.invalidateQueries({ queryKey: ['book', bookId] })
+    qc.invalidateQueries({ queryKey: ['admin', 'users'] })     // "n on loan" on the Users page
+  }
+}
+export function useLend() {
+  const after = useAfterLoanChange()
+  return useMutation({
+    mutationFn: async (body: { bookId: string; userId: string }) => unwrap(await api.POST('/api/admin/loans', { body })),
+    onSuccess: (loan) => after(loan.bookId),
+  })
+}
+export function useReturnLoan() {
+  const after = useAfterLoanChange()
+  return useMutation({
+    mutationFn: async (id: string) => unwrap(await api.POST('/api/admin/loans/{id}/return', { params: { path: { id } } })),
+    onSuccess: (loan) => after(loan.bookId),
+  })
+}

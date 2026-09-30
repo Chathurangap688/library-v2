@@ -189,6 +189,9 @@ async function main() {
       lent++
     }
 
+    // Lesson 4.5: the on_loan counter = number of open loans per book
+    await q(`update books set on_loan = (select count(*) from loans l where l.book_id = books.id and l.returned_at is null)`)
+
     // Sanity check straight from the database
     const check = await q(`select
         (select count(*) from users)::int users, (select count(*) from books)::int books,

@@ -15,6 +15,13 @@
       "when": 1790786095591,
       "tag": "0001_audit_log",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790793227537,
+      "tag": "0002_loan_counter",
+      "breakpoints": true
     }
   ]
 }

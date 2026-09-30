@@ -66,6 +66,9 @@ export const books = pgTable('books', {
   webSources: jsonb('web_sources').$type<{ title: string; url: string }[]>(),
   coverUrl: text('cover_url'),
   copies: integer('copies').notNull().default(1),
+  // Lesson 4.5: how many copies are out right now. The CHECK below makes over-lending
+  // IMPOSSIBLE, even when two admins click "Lend" at the same moment.
+  onLoan: integer('on_loan').notNull().default(0),
   shelf: text('shelf'),
   // Private: only admins see these (the API removes them for normal users)
   purchasedFrom: text('purchased_from'),
@@ -77,6 +80,7 @@ export const books = pgTable('books', {
   updatedAt: updatedAt(),
 }, (t) => [
   check('books_copies_positive', sql`${t.copies} >= 1`),
+  check('books_on_loan_within_copies', sql`${t.onLoan} >= 0 and ${t.onLoan} <= ${t.copies}`),
   // The same ISBN twice = the same book → add a copy instead (the "duplicate" rule from v1)
   uniqueIndex('books_isbn_uq').on(t.isbn).where(sql`${t.isbn} is not null and ${t.isbn} <> ''`),
   // Full-text search over the words people type (Sinhala, Singlish and English)

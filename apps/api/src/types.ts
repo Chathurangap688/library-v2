@@ -19,6 +19,7 @@ export type Bindings = {
   GEMINI_MODEL?: string
   GEMINI_BACKUP_MODELS?: string
   TAVILY_API_KEY?: string         // secret (optional: better web search)
+  LOAN_DAYS?: string              // Lesson 4.5: overdue after this many days (default 14)
 }
 
 // The signed-in user, as the API sees them (loaded from OUR database on every request)

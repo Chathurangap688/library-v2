@@ -5,8 +5,8 @@ import { getTableColumns, sql, type SQL } from 'drizzle-orm'
 import { books } from '../db/schema'
 
 // Everything EXCEPT the private purchase fields (admins get those in Phase 3)
-const { purchasedFrom, purchaseDate, price, notes, addedBy, ...publicBookColumns } = getTableColumns(books)
-void purchasedFrom; void purchaseDate; void price; void notes; void addedBy
+const { purchasedFrom, purchaseDate, price, notes, addedBy, onLoan, ...publicBookColumns } = getTableColumns(books)
+void purchasedFrom; void purchaseDate; void price; void notes; void addedBy; void onLoan
 export { publicBookColumns }
 
 // Calculated columns (sub-queries): one value per book row.
@@ -16,8 +16,7 @@ export const bookExtras = {
   categories: sql<string[]>`(select coalesce(array_agg(c.name order by c.name), '{}')
       from book_categories bc join categories c on c.id = bc.category_id
       where bc.book_id = books.id)`,
-  available: sql<number>`(books.copies - (select count(*) from loans l
-      where l.book_id = books.id and l.returned_at is null))::int`,
+  available: sql<number>`(books.copies - books.on_loan)::int`,      // Lesson 4.5: the counter
   avgRating: sql<number | null>`(select round(avg(r.rating), 1)::float8 from ratings r where r.book_id = books.id)`,
   ratingCount: sql<number>`(select count(*) from ratings r where r.book_id = books.id)::int`,
 }
@@ -68,6 +67,9 @@ export const myBookColumns = (userId: string) => ({
       where rs.book_id = books.id and rs.user_id = ${userId})`,
   myRating: sql<number | null>`(select r.rating from ratings r where r.book_id = books.id and r.user_id = ${userId})::int`,
   myReview: sql<string | null>`(select r.review from ratings r where r.book_id = books.id and r.user_id = ${userId})`,
+  // Lesson 4.5: when did I borrow it (null = I don't have it)
+  myLoanSince: sql<string | null>`(select l.borrowed_at from loans l where l.book_id = books.id
+      and l.user_id = ${userId} and l.returned_at is null order by l.borrowed_at desc limit 1)`,
 })
 
 /** Which columns this user may see (+ their own status and rating) */

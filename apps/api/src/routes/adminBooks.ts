@@ -118,7 +118,7 @@ adminBookRoutes.openapi(createRoute({
   responses: { 200: bookResponse('Updated'), ...adminErrors, 404: problemResponse('No such book'), 409: problemResponse('ISBN used by another book, or fewer copies than are on loan') },
 }), async (c) => {
   const { id } = c.req.valid('param'); const input = c.req.valid('json'); const db = c.get('db'); const me = c.get('user')!
-  const [before] = await db.select({ copies: books.copies, onLoan: sql<number>`(select count(*) from loans l where l.book_id = books.id and l.returned_at is null)::int` })
+  const [before] = await db.select({ copies: books.copies, onLoan: books.onLoan })
     .from(books).where(eq(books.id, id))
   if (!before) return problem(c, 404, `No book with id ${id}`)
   if (input.copies !== undefined && input.copies < before.onLoan) return problem(c, 409, `${before.onLoan} copies are on loan — copies cannot be less than that`)
@@ -156,7 +156,7 @@ adminBookRoutes.openapi(createRoute({
   responses: { 204: { description: 'Removed' }, ...adminErrors, 404: problemResponse('No such book'), 409: problemResponse('A copy is on loan') },
 }), async (c) => {
   const { id } = c.req.valid('param'); const db = c.get('db'); const me = c.get('user')!
-  const [book] = await db.select({ title: books.title, onLoan: sql<number>`(select count(*) from loans l where l.book_id = books.id and l.returned_at is null)::int` })
+  const [book] = await db.select({ title: books.title, onLoan: books.onLoan })
     .from(books).where(eq(books.id, id))
   if (!book) return problem(c, 404, `No book with id ${id}`)
   if (book.onLoan > 0) return problem(c, 409, `"${book.title}" is on loan — mark it returned first`)
