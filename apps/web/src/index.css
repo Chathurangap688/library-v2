@@ -15,7 +15,9 @@ a { color: var(--brand); }
 h1 { font-size: 1.6rem; margin: 0 0 .25rem; } h2 { font-size: 1.15rem; margin: 1.5rem 0 .5rem; }
 .muted { color: var(--muted); } .small { font-size: .85rem; }
 .good { color: var(--good); font-weight: 600; } .bad { color: var(--bad); font-weight: 600; }
-button, select, input { font: inherit; color: inherit; }
+button, select, input, textarea { font: inherit; color: inherit; }
+/* textareas: readable line spacing (Sinhala needs room), grow with the text where supported */
+textarea { line-height: 1.6; resize: vertical; field-sizing: content; min-height: 4.8em; max-height: 60vh; }
 button.link { background: none; border: 0; color: var(--brand); cursor: pointer; padding: 0; text-decoration: underline; }
 
 .topbar { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: 24px;
